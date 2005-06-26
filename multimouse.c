@@ -1,5 +1,7 @@
 /* Please see LICENSE in the root of this source tree. */
 
+#include <stdlib.h>
+
 #include "multimouse.h"
 
 
@@ -17,7 +19,7 @@ static const MultiMouseDriver *mice_drivers[] =
     #ifdef WINDOWS
     &MultiMouseDriver_windows,
     #endif
-    #ifdef __LINUX__
+    #ifdef __linux__
     &MultiMouseDriver_evdev,
     /*&MultiMouseDriver_mousedev,*/
     #endif
@@ -28,7 +30,7 @@ static const MultiMouseDriver *mice_drivers[] =
 };
 
 
-static MultiMouseDriver *driver = NULL;
+static const MultiMouseDriver *driver = NULL;
 
 int MultiMouse_Init(void)
 {
@@ -57,6 +59,14 @@ void MultiMouse_Quit(void)
         driver->quit();
     driver = NULL;
 } /* MultiMouse_Quit */
+
+
+const char *MultiMouse_DeviceName(unsigned int index)
+{
+    if (driver != NULL)
+        return(driver->name(index));
+    return(NULL);
+} /* MultiMouse_PollEvent */
 
 
 int MultiMouse_PollEvent(MultiMouseEvent *event)
