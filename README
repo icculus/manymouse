@@ -1,4 +1,6 @@
 
+ManyMouse's website is http://icculus.org/manymouse/
+
 This is a simple library to abstract away the reading of multiple input
  devices. It is designed to work cross-platform.
 
