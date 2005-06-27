@@ -1,13 +1,13 @@
 /*
- * MultiMouse main header. Include this from your app.
+ * ManyMouse main header. Include this from your app.
  *
  * Please see the file LICENSE in the source's root directory.
  *
  *  This file written by Ryan C. Gordon.
  */
 
-#ifndef _INCLUDE_MULTIMOUSE_H_
-#define _INCLUDE_MULTIMOUSE_H_
+#ifndef _INCLUDE_MANYMOUSE_H_
+#define _INCLUDE_MANYMOUSE_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,23 +15,23 @@ extern "C" {
 
 typedef enum
 {
-    MULTIMOUSE_EVENT_ABSMOTION = 0,
-    MULTIMOUSE_EVENT_RELMOTION,
-    MULTIMOUSE_EVENT_BUTTON,
-    MULTIMOUSE_EVENT_SCROLL,
-    MULTIMOUSE_EVENT_DISCONNECT,
-    MULTIMOUSE_EVENT_MAX
-} MultiMouseEventType;
+    MANYMOUSE_EVENT_ABSMOTION = 0,
+    MANYMOUSE_EVENT_RELMOTION,
+    MANYMOUSE_EVENT_BUTTON,
+    MANYMOUSE_EVENT_SCROLL,
+    MANYMOUSE_EVENT_DISCONNECT,
+    MANYMOUSE_EVENT_MAX
+} ManyMouseEventType;
 
 typedef struct
 {
-    MultiMouseEventType type;
+    ManyMouseEventType type;
     unsigned int device;
     unsigned int item;
     int value;
     int minval;
     int maxval;
-} MultiMouseEvent;
+} ManyMouseEvent;
 
 
 /* internal use only. */
@@ -40,20 +40,20 @@ typedef struct
     int (*init)(void);
     void (*quit)(void);
     const char *(*name)(unsigned int index);
-    int (*poll)(MultiMouseEvent *event);
-} MultiMouseDriver;
+    int (*poll)(ManyMouseEvent *event);
+} ManyMouseDriver;
 
 
-int MultiMouse_Init(void);
-void MultiMouse_Quit(void);
-const char *MultiMouse_DeviceName(unsigned int index);
-int MultiMouse_PollEvent(MultiMouseEvent *event);
+int ManyMouse_Init(void);
+void ManyMouse_Quit(void);
+const char *ManyMouse_DeviceName(unsigned int index);
+int ManyMouse_PollEvent(ManyMouseEvent *event);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  /* !defined _INCLUDE_MULTIMOUSE_H_ */
+#endif  /* !defined _INCLUDE_MANYMOUSE_H_ */
 
-/* end of multimouse.h ... */
+/* end of manymouse.h ... */
 

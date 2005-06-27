@@ -11,23 +11,23 @@ Just copy all of the C files and headers in this directory into your
  you will need to define some things.
 
 To use:
- - #include "multimouse.h" in your source code
- - Call MultiMouse_Init(); if it returns > 0, it found mice it can use.
- - Call MultiMouse_DeviceName() if you want to know the human-readable
+ - #include "manymouse.h" in your source code
+ - Call ManyMouse_Init(); if it returns > 0, it found mice it can use.
+ - Call ManyMouse_DeviceName() if you want to know the human-readable
    name of each device ("Logitech USB mouse", etc).
- - Read input from the mice with MultiMouse_PollEvent() in a loop until the
+ - Read input from the mice with ManyMouse_PollEvent() in a loop until the
    function returns 0. Each time through the loop, example the event that
    was returned and react appropriately.
- - When you are done, call MultiMouse_Quit().
+ - When you are done, call ManyMouse_Quit().
 
 There are examples of complete usage in the "example" directory.
 
 Some notes:
  - If a mouse is disconnected, it will not return future events, even if you
    plug it right back in. You will be alerted of disconnects programmatically
-   through the MULTIMOUSE_EVENT_DISCONNECT event, which will be the last
+   through the MANYMOUSE_EVENT_DISCONNECT event, which will be the last
    event sent for the disconnected device. You can safely redetect all mice by
-   calling MultiMouse_Quit() followed by MultiMouse_Init(), but be warned that
+   calling ManyMouse_Quit() followed by ManyMouse_Init(), but be warned that
    this may cause mice (even ones that weren't unplugged) to suddenly have a
    different device index. It is recommended that you make redetection an
    explicit user-requested function for this reason.
@@ -35,8 +35,8 @@ Some notes:
  - In most systems, all mice will control the same system cursor. It's
    recommended that you ask your Window system to grab the mouse input and
    hide the system cursor, and then do all mouse input processing through
-   Multimouse. Most GUI systems will continue to deliver mouse events through
-   the system cursor even when MultiMouse is working; in these cases, you
+   ManyMouse. Most GUI systems will continue to deliver mouse events through
+   the system cursor even when ManyMouse is working; in these cases, you
    should continue to read the usual GUI system event queue, and just throw
    away the mouse events.
 

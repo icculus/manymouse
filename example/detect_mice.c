@@ -1,5 +1,5 @@
 /*
- * A test file for MultiMouse that lists all seen mice.
+ * A test file for ManyMouse that lists all seen mice.
  *
  * Please see the file LICENSE in the source's root directory.
  *
@@ -10,11 +10,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "multimouse.h"
+#include "manymouse.h"
 
 int main(int argc, char **argv)
 {
-    int available_mice = MultiMouse_Init();
+    int available_mice = ManyMouse_Init();
     if (available_mice <= 0)
     {
         printf("No mice detected!\n");
@@ -24,9 +24,9 @@ int main(int argc, char **argv)
     {
         int i;
         for (i = 0; i < available_mice; i++)
-            printf("#%d: %s\n", i, MultiMouse_DeviceName(i));
+            printf("#%d: %s\n", i, ManyMouse_DeviceName(i));
     }
-    MultiMouse_Quit();
+    ManyMouse_Quit();
     return(0);
 }
 

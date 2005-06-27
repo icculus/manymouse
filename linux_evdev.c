@@ -21,7 +21,7 @@
 
 #include <linux/input.h>  /* evdev interface...  */
 
-#include "multimouse.h"
+#include "manymouse.h"
 
 #define test_bit(array, bit)    (array[bit/8] & (1<<(bit%8)))
 
@@ -41,7 +41,7 @@ static MouseStruct mice[MAX_MICE];
 static unsigned int available_mice = 0;
 
 
-static int poll_mouse(MouseStruct *mouse, MultiMouseEvent *outevent)
+static int poll_mouse(MouseStruct *mouse, ManyMouseEvent *outevent)
 {
     int unhandled = 1;
     while (unhandled)  /* read until failure or valid event. */
@@ -56,7 +56,7 @@ static int poll_mouse(MouseStruct *mouse, MultiMouseEvent *outevent)
             /* mouse was unplugged? */
             close(mouse->fd);  /* stop reading from this mouse. */
             mouse->fd = -1;
-            outevent->type = MULTIMOUSE_EVENT_DISCONNECT;
+            outevent->type = MANYMOUSE_EVENT_DISCONNECT;
             return(1);
         } /* if */
 
@@ -67,7 +67,7 @@ static int poll_mouse(MouseStruct *mouse, MultiMouseEvent *outevent)
         outevent->value = event.value;
         if (event.type == EV_REL)
         {
-            outevent->type = MULTIMOUSE_EVENT_RELMOTION;
+            outevent->type = MANYMOUSE_EVENT_RELMOTION;
             if ((event.code == REL_X) || (event.code == REL_DIAL))
                 outevent->item = 0;
             else if (event.code == REL_Y)
@@ -75,13 +75,13 @@ static int poll_mouse(MouseStruct *mouse, MultiMouseEvent *outevent)
 
             else if (event.code == REL_WHEEL)
             {
-                outevent->type = MULTIMOUSE_EVENT_SCROLL;
+                outevent->type = MANYMOUSE_EVENT_SCROLL;
                 outevent->item = 0;
             } /* else if */
 
             else if (event.code == REL_HWHEEL)
             {
-                outevent->type = MULTIMOUSE_EVENT_SCROLL;
+                outevent->type = MANYMOUSE_EVENT_SCROLL;
                 outevent->item = 1;
             } /* else if */
 
@@ -93,7 +93,7 @@ static int poll_mouse(MouseStruct *mouse, MultiMouseEvent *outevent)
 
         else if (event.type == EV_ABS)
         {
-            outevent->type = MULTIMOUSE_EVENT_ABSMOTION;
+            outevent->type = MANYMOUSE_EVENT_ABSMOTION;
             if (event.code == ABS_X)
             {
                 outevent->item = 0;
@@ -114,7 +114,7 @@ static int poll_mouse(MouseStruct *mouse, MultiMouseEvent *outevent)
 
         else if (event.type == EV_KEY)
         {
-            outevent->type = MULTIMOUSE_EVENT_BUTTON;
+            outevent->type = MANYMOUSE_EVENT_BUTTON;
             if ((event.code >= BTN_LEFT) && (event.code <= BTN_BACK))
                 outevent->item = event.code - BTN_MOUSE;
 
@@ -281,7 +281,7 @@ static const char *linux_evdev_name(unsigned int index)
 } /* linux_evdev_name */
 
 
-static int linux_evdev_poll(MultiMouseEvent *event)
+static int linux_evdev_poll(ManyMouseEvent *event)
 {
     /*
      * (i) is static so we iterate through all mice round-robin. This
@@ -313,7 +313,7 @@ static int linux_evdev_poll(MultiMouseEvent *event)
 } /* linux_evdev_poll */
 
 
-MultiMouseDriver MultiMouseDriver_evdev =
+ManyMouseDriver ManyMouseDriver_evdev =
 {
     linux_evdev_init,
     linux_evdev_quit,

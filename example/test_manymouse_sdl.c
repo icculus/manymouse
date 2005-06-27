@@ -1,5 +1,5 @@
 /*
- * A test file for MultiMouse that visualizes input with the SDL library.
+ * A test file for ManyMouse that visualizes input with the SDL library.
  *  Simple Directmedia Layer (SDL) can be found at http://libsdl.org/
  *
  * Please see the file LICENSE in the source's root directory.
@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "multimouse.h"
+#include "manymouse.h"
 #include "SDL.h"
 
 #define MAX_MICE 128
@@ -32,8 +32,8 @@ static Mouse mice[MAX_MICE];
 
 static void update_mice(int screen_w, int screen_h)
 {
-    MultiMouseEvent event;
-    while (MultiMouse_PollEvent(&event))
+    ManyMouseEvent event;
+    while (ManyMouse_PollEvent(&event))
     {
         Mouse *mouse;
         if (event.device >= (unsigned int) available_mice)
@@ -41,7 +41,7 @@ static void update_mice(int screen_w, int screen_h)
 
         mouse = &mice[event.device];
 
-        if (event.type == MULTIMOUSE_EVENT_RELMOTION)
+        if (event.type == MANYMOUSE_EVENT_RELMOTION)
         {
             if (event.item == 0)
                 mouse->x += event.value;
@@ -49,16 +49,16 @@ static void update_mice(int screen_w, int screen_h)
                 mouse->y += event.value;
         }
 
-        else if (event.type == MULTIMOUSE_EVENT_ABSMOTION)
+        else if (event.type == MANYMOUSE_EVENT_ABSMOTION)
             ; /* !!! FIXME: do something with this. */
 
-        else if (event.type == MULTIMOUSE_EVENT_BUTTON)
+        else if (event.type == MANYMOUSE_EVENT_BUTTON)
             ; /* !!! FIXME: do something with this. */
 
-        else if (event.type == MULTIMOUSE_EVENT_SCROLL)
+        else if (event.type == MANYMOUSE_EVENT_SCROLL)
             ; /* !!! FIXME: do something with this. */
 
-        else if (event.type == MULTIMOUSE_EVENT_DISCONNECT)
+        else if (event.type == MANYMOUSE_EVENT_DISCONNECT)
             mice[event.device].connected = 0;
     }
 }
@@ -111,7 +111,7 @@ static void initial_setup(int screen_w, int screen_h)
 
 static void init_mice(void)
 {
-    available_mice = MultiMouse_Init();
+    available_mice = ManyMouse_Init();
     if (available_mice > MAX_MICE)
         available_mice = MAX_MICE;
 
@@ -122,7 +122,7 @@ static void init_mice(void)
         int i;
         for (i = 0; i < available_mice; i++)
         {
-            const char *name = MultiMouse_DeviceName(i);
+            const char *name = ManyMouse_DeviceName(i);
             strncpy(mice[i].name, name, sizeof (mice[i].name));
             mice[i].name[sizeof (mice[i].name) - 1] = '\0';
             mice[i].connected = 1;
@@ -153,7 +153,7 @@ int main(int argc, char **argv)
     }
 
     SDL_WM_SetCaption("Move your mice, R to rescan, G to (un)grab, S to show/hide, ESC to quit",
-                        "multimouse");
+                        "manymouse");
 
     SDL_WM_GrabInput(SDL_GRAB_ON);
 
@@ -187,7 +187,7 @@ int main(int argc, char **argv)
                 else if (e.key.keysym.sym == SDLK_r)
                 {
                     printf("\n\nRESCAN!\n\n");
-                    MultiMouse_Quit();
+                    ManyMouse_Quit();
                     init_mice();
                 }
             }
@@ -196,10 +196,10 @@ int main(int argc, char **argv)
         draw_mice(screen);
     }
 
-    MultiMouse_Quit();
+    ManyMouse_Quit();
     SDL_Quit();
     return 0;
 }
 
-/* end of test_multimouse_sdl.c ... */
+/* end of test_manymouse_sdl.c ... */
 

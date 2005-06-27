@@ -1,5 +1,5 @@
 /*
- * MultiMouse foundation code; apps talks to this and it talks to the lowlevel
+ * ManyMouse foundation code; apps talks to this and it talks to the lowlevel
  *  code for various platforms.
  *
  * Please see the file LICENSE in the source's root directory.
@@ -8,36 +8,36 @@
  */
 
 #include <stdlib.h>
-#include "multimouse.h"
+#include "manymouse.h"
 
-extern const MultiMouseDriver MultiMouseDriver_windows;
-extern const MultiMouseDriver MultiMouseDriver_evdev;
-extern const MultiMouseDriver MultiMouseDriver_mousedev;
-extern const MultiMouseDriver MultiMouseDriver_hidmanager;
-extern const MultiMouseDriver MultiMouseDriver_xinput;
+extern const ManyMouseDriver ManyMouseDriver_windows;
+extern const ManyMouseDriver ManyMouseDriver_evdev;
+extern const ManyMouseDriver ManyMouseDriver_mousedev;
+extern const ManyMouseDriver ManyMouseDriver_hidmanager;
+extern const ManyMouseDriver ManyMouseDriver_xinput;
 
-static const MultiMouseDriver *mice_drivers[] =
+static const ManyMouseDriver *mice_drivers[] =
 {
     #if SUPPORT_XINPUT
-    &MultiMouseDriver_xinput,
+    &ManyMouseDriver_xinput,
     #endif
     #ifdef WINDOWS
-    &MultiMouseDriver_windows,
+    &ManyMouseDriver_windows,
     #endif
     #ifdef __linux__
-    &MultiMouseDriver_evdev,
-    /*&MultiMouseDriver_mousedev,*/
+    &ManyMouseDriver_evdev,
+    /*&ManyMouseDriver_mousedev,*/
     #endif
     #if ( (defined(__MACH__)) && (defined(__APPLE__)) )
-    &MultiMouseDriver_hidmanager,
+    &ManyMouseDriver_hidmanager,
     #endif
     NULL
 };
 
 
-static const MultiMouseDriver *driver = NULL;
+static const ManyMouseDriver *driver = NULL;
 
-int MultiMouse_Init(void)
+int ManyMouse_Init(void)
 {
     int i;
 
@@ -55,31 +55,31 @@ int MultiMouse_Init(void)
     } /* for */
 
     return(-1);
-} /* MultiMouse_Init */
+} /* ManyMouse_Init */
 
 
-void MultiMouse_Quit(void)
+void ManyMouse_Quit(void)
 {
     if (driver != NULL)
         driver->quit();
     driver = NULL;
-} /* MultiMouse_Quit */
+} /* ManyMouse_Quit */
 
 
-const char *MultiMouse_DeviceName(unsigned int index)
+const char *ManyMouse_DeviceName(unsigned int index)
 {
     if (driver != NULL)
         return(driver->name(index));
     return(NULL);
-} /* MultiMouse_PollEvent */
+} /* ManyMouse_PollEvent */
 
 
-int MultiMouse_PollEvent(MultiMouseEvent *event)
+int ManyMouse_PollEvent(ManyMouseEvent *event)
 {
     if (driver != NULL)
         return(driver->poll(event));
     return(0);
-} /* MultiMouse_PollEvent */
+} /* ManyMouse_PollEvent */
 
-/* end of multimouse.c ... */
+/* end of manymouse.c ... */
 

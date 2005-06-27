@@ -16,7 +16,7 @@
  *
  * The source license to HID Utilities allows this sort of blatant stealing.
  *
- * Scroll down for "-- END HID UTILITIES --" to see the MultiMouse glue code.
+ * Scroll down for "-- END HID UTILITIES --" to see the ManyMouse glue code.
  */
 
 #include <Carbon/Carbon.h>
@@ -1428,9 +1428,9 @@ static unsigned long  HIDQueueDevice (pRecDevice pDevice)
 /* -- END HID UTILITIES -- */
 
 
-#include "multimouse.h"
+#include "manymouse.h"
 
-static int poll_mouse(pRecDevice mouse, MultiMouseEvent *outevent)
+static int poll_mouse(pRecDevice mouse, ManyMouseEvent *outevent)
 {
     int unhandled = 1;
     while (unhandled)  /* read until failure or valid event. */
@@ -1458,7 +1458,7 @@ static int poll_mouse(pRecDevice mouse, MultiMouseEvent *outevent)
         if (recelem->usagePage == kHIDPage_GenericDesktop)
         {
             /* !!! FIXME: absolute motion? */
-            outevent->type = MULTIMOUSE_EVENT_RELMOTION;  /* assume this. */
+            outevent->type = MANYMOUSE_EVENT_RELMOTION;  /* assume this. */
             if (recelem->usage == kHIDUsage_GD_X)
                 outevent->item = 0;
             else if (recelem->usage == kHIDUsage_GD_Y)
@@ -1466,7 +1466,7 @@ static int poll_mouse(pRecDevice mouse, MultiMouseEvent *outevent)
             else if (recelem->usage == kHIDUsage_GD_Wheel)
             {
                 /* !!! FIXME: find horizontal scroll? */
-                outevent->type = MULTIMOUSE_EVENT_SCROLL;
+                outevent->type = MANYMOUSE_EVENT_SCROLL;
                 outevent->item = 0;
             } /* else if */
             else
@@ -1477,7 +1477,7 @@ static int poll_mouse(pRecDevice mouse, MultiMouseEvent *outevent)
 
         else if (recelem->usagePage == kHIDPage_Button)
         {
-            outevent->type = MULTIMOUSE_EVENT_BUTTON;
+            outevent->type = MANYMOUSE_EVENT_BUTTON;
             outevent->item = ((int) recelem->usage) - 1;
         } /* else if */
 
@@ -1557,7 +1557,7 @@ static const char *macosx_hidmanager_name(unsigned int index)
 } /* macosx_hidmanager_name */
 
 
-static int macosx_hidmanager_poll(MultiMouseEvent *event)
+static int macosx_hidmanager_poll(ManyMouseEvent *event)
 {
     /*
      * (i) is static so we iterate through all mice round-robin. This
@@ -1588,7 +1588,7 @@ static int macosx_hidmanager_poll(MultiMouseEvent *event)
 } /* macosx_hidmanager_poll */
 
 
-MultiMouseDriver MultiMouseDriver_hidmanager =
+ManyMouseDriver ManyMouseDriver_hidmanager =
 {
     macosx_hidmanager_init,
     macosx_hidmanager_quit,
