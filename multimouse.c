@@ -1,14 +1,19 @@
-/* Please see LICENSE in the root of this source tree. */
+/*
+ * MultiMouse foundation code; apps talks to this and it talks to the lowlevel
+ *  code for various platforms.
+ *
+ * Please see the file LICENSE in the source's root directory.
+ *
+ *  This file written by Ryan C. Gordon.
+ */
 
 #include <stdlib.h>
-
 #include "multimouse.h"
-
 
 extern const MultiMouseDriver MultiMouseDriver_windows;
 extern const MultiMouseDriver MultiMouseDriver_evdev;
 extern const MultiMouseDriver MultiMouseDriver_mousedev;
-extern const MultiMouseDriver MultiMouseDriver_macosx;
+extern const MultiMouseDriver MultiMouseDriver_hidmanager;
 extern const MultiMouseDriver MultiMouseDriver_xinput;
 
 static const MultiMouseDriver *mice_drivers[] =
@@ -24,7 +29,7 @@ static const MultiMouseDriver *mice_drivers[] =
     /*&MultiMouseDriver_mousedev,*/
     #endif
     #if ( (defined(__MACH__)) && (defined(__APPLE__)) )
-    &MultiMouseDriver_macosx,
+    &MultiMouseDriver_hidmanager,
     #endif
     NULL
 };
