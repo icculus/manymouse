@@ -5,16 +5,25 @@ This is a simple library to abstract away the reading of multiple input
  devices. It is designed to work cross-platform.
 
 Just copy all of the C files and headers in this directory into your
- project and build; for basic use, you shouldn't have to #define anything,
- and each file is wrapped in #ifdefs to avoid compiling on the wrong
- platforms. For more complex use (such as using the X11 XInput extension),
- you will need to define some things.
+ project and build them; unless explicitly noted, you shouldn't have to
+ #define anything, and each file is wrapped in #ifdefs to avoid compiling
+ on the wrong platforms, so it is safe to build everything without close
+ examination.
+
+You don't have to build this as a shared library; we encourage you to just
+ compile the source and statically link them into your application...this
+ makes integrating ManyMouse much less complex.
+
+The "example" directory contains complete programs to demostrate the use of
+ the ManyMouse API in action. These files don't need to be copied into your
+ project, but you can cut-and-paste their contents as needed.
 
 To use:
  - #include "manymouse.h" in your source code
  - Call ManyMouse_Init(); if it returns > 0, it found mice it can use.
  - Call ManyMouse_DeviceName() if you want to know the human-readable
-   name of each device ("Logitech USB mouse", etc).
+   name of each device ("Logitech USB mouse", etc). This string will be in
+   UTF-8 format, which looks like regular ASCII for most devices.
  - Read input from the mice with ManyMouse_PollEvent() in a loop until the
    function returns 0. Each time through the loop, example the event that
    was returned and react appropriately.
@@ -29,17 +38,55 @@ Some notes:
    event sent for the disconnected device. You can safely redetect all mice by
    calling ManyMouse_Quit() followed by ManyMouse_Init(), but be warned that
    this may cause mice (even ones that weren't unplugged) to suddenly have a
-   different device index. It is recommended that you make redetection an
-   explicit user-requested function for this reason.
+   different device index, since on most systems, the replug will cause the
+   mouse to show up elsewhere in the system's USB device tree. It is
+   recommended that you make redetection an explicit user-requested function
+   for this reason.
 
  - In most systems, all mice will control the same system cursor. It's
-   recommended that you ask your Window system to grab the mouse input and
-   hide the system cursor, and then do all mouse input processing through
-   ManyMouse. Most GUI systems will continue to deliver mouse events through
-   the system cursor even when ManyMouse is working; in these cases, you
-   should continue to read the usual GUI system event queue, and just throw
-   away the mouse events.
+   recommended that you ask your window system to grab the mouse input to your
+   application and hide the system cursor, and then do all mouse input
+   processing through ManyMouse. Most GUI systems will continue to deliver
+   mouse events through the system cursor even when ManyMouse is working; in
+   these cases, you should continue to read the usual GUI system event queue,
+   for the usual reasons, and just throw away the mouse events, which you
+   instead grab via ManyMouse_PollEvent(). Hiding the system cursor will mean
+   that you may need to draw your own cursor in an app-specific way, but
+   chances are you need to do that anyhow if you plan to support multiple
+   mice. Grabbing the input means preventing other apps from getting mouse
+   events, too, so you'll probably need to build in a means to ungrab the
+   mouse if the user wants to, say, respond to an instant message window or
+   email...again, you will probably need to do this anyhow.
 
+ - On Windows, ManyMouse requires Windows XP or later to function, since it
+   relies on APIs that are new to XP...it uses LoadLibrary() on User32.dll and
+   GetProcAddress() to get all the Windows entry points it uses, so on pre-XP
+   systems, it will run, but fail to find any mice in ManyMouse_Init().
+   Your app must have an event queue before calling ManyMouse_Init(), and must
+   _never_ handle WM_INPUT messages (which means never calling any of the
+   "RawInput" APIs...ManyMouse does this internally, hooking your existing
+   event queue, to abstract the Windows dependency in the library's API).
+   Pretty much the only use for WM_INPUT is what ManyMouse does for you, so
+   this shouldn't be a serious limitation to your app. If you happen to be
+   using Simple Directmedia Layer (http://libsdl.org/) then you just need to
+   have a successful call to SDL_SetVideoMode() before calling
+   ManyMouse_Init(). We'll accept a contributed .NET assembly for this
+   library, but have no plans to implement one ourselves.
+
+ - On Linux, we first try to use the /dev/input/event* devices; this means
+   that ManyMouse can function with or without an X server. Eventually we'll
+   try to support and favor the XInput extension if the DISPLAY environment
+   variable is set, which will help with remote displays and non-Linux Unixes.
+
+ - On MacOS X, we use IOKit's HID Manager API, which means you can use this
+   C-callable library from Cocoa, Carbon, and generic Unix applications, with
+   or without a GUI. We'll accept contributed Java bindings, but have no plans
+   to implement those ourselves. This code may or may not work on Darwin
+   (we're not sure if IOKit is available to that platform); reports of
+   success are welcome.
+
+ - Support for other platforms than MacOS X, Linux, and Windows is not planned,
+   but contributions of implementations for other platforms are welcome.
 
 Please see the file LICENSE in the source's root directory.
 
