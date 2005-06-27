@@ -1,9 +1,9 @@
 
-macosx := true
+macosx := false
 
 CFLAGS += -O0 -Wall -g -c
 
-CFLAGS += -I.
+CFLAGS += -I. -I/usr/src/linux/include
 
 CC := gcc
 LD := gcc
