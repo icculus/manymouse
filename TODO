@@ -1,0 +1,9 @@
+
+- Hide absolute input (always convert to relative internally?)
+- return -1 on init failure, instead of 0, which could mean successful init,
+  but no devices available?
+- Windows port.
+- Look for FIXMEs.
+
+/* end of TODO ... */
+
