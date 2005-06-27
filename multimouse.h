@@ -1,4 +1,10 @@
-/* Please see LICENSE in the root of this source tree. */
+/*
+ * MultiMouse main header. Include this from your app.
+ *
+ * Please see the file LICENSE in the source's root directory.
+ *
+ *  This file written by Ryan C. Gordon.
+ */
 
 #ifndef _INCLUDE_MULTIMOUSE_H_
 #define _INCLUDE_MULTIMOUSE_H_
