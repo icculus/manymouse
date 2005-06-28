@@ -13,6 +13,8 @@
 extern "C" {
 #endif
 
+#define MANYMOUSE_VERSION "0.0.1"
+
 typedef enum
 {
     MANYMOUSE_EVENT_ABSMOTION = 0,

@@ -10,6 +10,9 @@
 #include <stdlib.h>
 #include "manymouse.h"
 
+static const char *manymouse_copyright =
+    "ManyMouse " MANYMOUSE_VERSION " (c) 2005 Ryan C. Gordon.";
+
 extern const ManyMouseDriver ManyMouseDriver_windows;
 extern const ManyMouseDriver ManyMouseDriver_evdev;
 extern const ManyMouseDriver ManyMouseDriver_mousedev;
@@ -40,6 +43,10 @@ static const ManyMouseDriver *driver = NULL;
 int ManyMouse_Init(void)
 {
     int i;
+
+    /* impossible test to keep manymouse_copyright linked into the binary. */
+    if ((char *) driver == (const char *) manymouse_copyright)
+        return(-1);
 
     if (driver != NULL)
         return(-1);
