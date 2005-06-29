@@ -91,21 +91,6 @@ static UINT (WINAPI *pGetRawInputData)(
     PUINT pcbSize,
     UINT cbSizeHeader
 );
-static HHOOK (WINAPI *pSetWindowsHookExA)(
-    int idHook,
-    HOOKPROC lpfn,
-    HINSTANCE hMod,
-    DWORD dwThreadId
-);
-static BOOL (WINAPI *pUnhookWindowsHookEx)(
-    HHOOK hhk
-);
-static LRESULT (WINAPI *pCallNextHookEx)(
-    HHOOK hhk,
-    int nCode,
-    WPARAM wParam,
-    LPARAM lParam
-);
 
 static int symlookup(HMODULE dll, void **addr, const char *sym)
 {
@@ -137,9 +122,6 @@ static int find_api_symbols(void)
     LOOKUP(DefRawInputProc);
     LOOKUP(GetRawInputBuffer);
     LOOKUP(GetRawInputData);
-    LOOKUP(SetWindowsHookExA);
-    LOOKUP(UnhookWindowsHookEx);
-    LOOKUP(CallNextHookEx);
     #undef LOOKUP
 
     /* !!! FIXME: store user32dll and free it on quit? */
@@ -147,38 +129,6 @@ static int find_api_symbols(void)
     did_api_lookup = 1;
     return(1);
 } /* find_api_symbols */
-
-
-#if 0
-static const char *win32strerror(void)
-{
-    static TCHAR msgbuf[255];
-    TCHAR *ptr = msgbuf;
-
-    FormatMessage(
-        FORMAT_MESSAGE_FROM_SYSTEM |
-        FORMAT_MESSAGE_IGNORE_INSERTS,
-        NULL,
-        GetLastError(),
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* Default language */
-        msgbuf,
-        sizeof (msgbuf) / sizeof (TCHAR),
-        NULL 
-    );
-
-        /* chop off newlines. */
-    for (ptr = msgbuf; *ptr; ptr++)
-    {
-        if ((*ptr == '\n') || (*ptr == '\r'))
-        {
-            *ptr = ' ';
-            break;
-        } /* if */
-    } /* for */
-
-    return((const char *) msgbuf);
-} /* win32strerror */
-#endif
 
 
 static void init_mouse(const RAWINPUTDEVICELIST *dev)
@@ -219,7 +169,6 @@ static void queue_event(const ManyMouseEvent *event)
     if (input_events_write == input_events_read)
     {
         /* !!! FIXME: we need to not lose mouse buttons here. */
-        OutputDebugString("ring buffer is full!\n");
         input_events_read = ((input_events_read + 1) % MAX_EVENTS);
     } /* if */
 
@@ -266,7 +215,6 @@ static void queue_from_rawinput(const RAWINPUT *raw)
         event.item = 1;
         event.value = mouse->lLastY;
         queue_event(&event);
-        OutputDebugString("absolute motion\n");
     } /* if */
 
     else /*if (mouse->usFlags & MOUSE_MOVE_RELATIVE)*/
@@ -277,7 +225,6 @@ static void queue_from_rawinput(const RAWINPUT *raw)
             event.item = 0;
             event.value = mouse->lLastX;
             queue_event(&event);
-            OutputDebugString("relative X motion\n");
         } /* if */
 
         if (mouse->lLastY != 0)
@@ -285,7 +232,6 @@ static void queue_from_rawinput(const RAWINPUT *raw)
             event.item = 1;
             event.value = mouse->lLastY;
             queue_event(&event);
-            OutputDebugString("relative Y motion\n");
         } /* if */
     } /* else if */
 
@@ -296,13 +242,11 @@ static void queue_from_rawinput(const RAWINPUT *raw)
             event.item = x-1; \
             event.value = 1; \
             queue_event(&event); \
-            OutputDebugString("button " #x " down\n"); \
         } \
         if (mouse->usButtonFlags & RI_MOUSE_BUTTON_##x##_UP) { \
             event.item = x-1; \
             event.value = 0; \
             queue_event(&event); \
-            OutputDebugString("button " #x " up\n"); \
         } \
     }
 
@@ -318,7 +262,6 @@ static void queue_from_rawinput(const RAWINPUT *raw)
     {
         if (mouse->usButtonData != 0)  /* !!! FIXME: can this ever be zero? */
         {
-            OutputDebugString("wheel\n");
             event.type = MANYMOUSE_EVENT_SCROLL;
             event.item = 0;
             event.value = (mouse->usButtonData > 0) ? 1 : -1;
@@ -359,7 +302,7 @@ static LRESULT CALLBACK RawWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
         return(0);
 
     return DefWindowProc(hWnd, Msg, wParam, lParam);
-} /* WndProc */
+} /* RawWndProc */
 
 
 static int init_event_queue(void)
