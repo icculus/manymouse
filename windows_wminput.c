@@ -55,7 +55,12 @@ static MouseStruct mice[MAX_MICE];
  * The RawInput APIs only exist in Windows XP and later, so you want this
  *  to fail gracefully on earlier systems instead of refusing to start the
  *  process due to missing symbols. To this end, we do a symbol lookup on
- *  User32.dll to get the entry points.
+ *  User32.dll, etc to get the entry points.
+ *
+ * A lot of these are available all the way back to the start of win32 in
+ *  Windows 95 and WinNT 3.1, but just so you don't have to track down any
+ *  import libraries, I've added those here, too. That fits well with the
+ *  idea of just adding the sources to your build and going forward.
  */
 static UINT (WINAPI *pGetRawInputDeviceList)(
     PRAWINPUTDEVICELIST pRawInputDeviceList,
@@ -91,7 +96,70 @@ static UINT (WINAPI *pGetRawInputData)(
     PUINT pcbSize,
     UINT cbSizeHeader
 );
-
+static LONG (WINAPI *pRegQueryValueExA)(
+    HKEY hKey,
+    LPCTSTR lpValueName,
+    LPDWORD lpReserved,
+    LPDWORD lpType,
+    LPBYTE lpData,
+    LPDWORD lpcbData
+);
+static LONG (WINAPI *pRegOpenKeyExA)(
+    HKEY hKey,
+    LPCTSTR lpSubKey,
+    DWORD ulOptions,
+    REGSAM samDesired,
+    PHKEY phkResult
+);
+static LONG (WINAPI *pRegCloseKey)(
+    HKEY hKey
+);
+static HWND (WINAPI *pCreateWindowExA)(
+    DWORD dwExStyle,
+    LPCTSTR lpClassName,
+    LPCTSTR lpWindowName,
+    DWORD dwStyle,
+    int x,
+    int y,
+    int nWidth,
+    int nHeight,
+    HWND hWndParent,
+    HMENU hMenu,
+    HINSTANCE hInstance,
+    LPVOID lpParam
+);
+static ATOM (WINAPI *pRegisterClassExA)(
+    CONST WNDCLASSEX *lpwcx
+);
+static LRESULT (WINAPI *pDefWindowProcA)(
+    HWND hWnd,
+    UINT Msg,
+    WPARAM wParam,
+    LPARAM lParam
+);
+static BOOL (WINAPI *pUnregisterClassA)(
+    LPCTSTR lpClassName,
+    HINSTANCE hInstance
+);
+static HMODULE (WINAPI *pGetModuleHandleA)(
+    LPCTSTR lpModuleName
+);
+static BOOL (WINAPI *pPeekMessageA)(
+    LPMSG lpMsg,
+    HWND hWnd,
+    UINT wMsgFilterMin,
+    UINT wMsgFilterMax,
+    UINT wRemoveMsg
+);
+static BOOL (WINAPI *pTranslateMessage)(
+    const MSG *lpMsg
+);
+static LRESULT (WINAPI *pDispatchMessageA)(
+    const MSG *lpmsg
+);
+static BOOL (WINAPI *pDestroyWindow)(
+    HWND hWnd
+);
 static int symlookup(HMODULE dll, void **addr, const char *sym)
 {
     *addr = GetProcAddress(dll, sym);
@@ -111,26 +179,48 @@ static int find_api_symbols(void)
     if (did_api_lookup)
         return(1);
 
+    #define LOOKUP(x) { if (!symlookup(dll, (void **) &p##x, #x)) return(0); }
     dll = LoadLibrary("user32.dll");
     if (dll == NULL)
         return(0);
 
-    #define LOOKUP(x) { if (!symlookup(dll, (void **) &p##x, #x)) return(0); }
     LOOKUP(GetRawInputDeviceInfoA);
     LOOKUP(RegisterRawInputDevices);
     LOOKUP(GetRawInputDeviceList);
     LOOKUP(DefRawInputProc);
     LOOKUP(GetRawInputBuffer);
     LOOKUP(GetRawInputData);
-    #undef LOOKUP
+    LOOKUP(CreateWindowExA);
+    LOOKUP(RegisterClassExA);
+    LOOKUP(UnregisterClassA);
+    LOOKUP(DefWindowProcA);
+    LOOKUP(PeekMessageA);
+    LOOKUP(TranslateMessage);
+    LOOKUP(DispatchMessageA);
+    LOOKUP(DestroyWindow);
 
-    /* !!! FIXME: store user32dll and free it on quit? */
+    dll = LoadLibrary("advapi32.dll");
+    if (dll == NULL)
+        return(0);
+
+    LOOKUP(RegOpenKeyExA);
+    LOOKUP(RegQueryValueExA);
+    LOOKUP(RegCloseKey);
+
+    dll = LoadLibrary("kernel32.dll");
+    if (dll == NULL)
+        return(0);
+
+    LOOKUP(GetModuleHandleA);
+
+    #undef LOOKUP
 
     did_api_lookup = 1;
     return(1);
 } /* find_api_symbols */
 
 
+/* !!! FIXME: mutex this and pollevent? */
 static void queue_event(const ManyMouseEvent *event)
 {
     input_events_write = ((input_events_write + 1) % MAX_EVENTS);
@@ -271,13 +361,13 @@ static LRESULT CALLBACK RawWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
     else if (Msg == WM_DESTROY)
         return(0);
 
-    return DefWindowProc(hWnd, Msg, wParam, lParam);
+    return pDefWindowProcA(hWnd, Msg, wParam, lParam);
 } /* RawWndProc */
 
 
 static int init_event_queue(void)
 {
-    HINSTANCE hInstance = GetModuleHandle(NULL);
+    HINSTANCE hInstance = pGetModuleHandleA(NULL);
     WNDCLASSEX wce;
     RAWINPUTDEVICE rid;
 
@@ -289,11 +379,11 @@ static int init_event_queue(void)
     wce.lpfnWndProc = RawWndProc;
     wce.lpszClassName = class_name;
     wce.hInstance = hInstance;
-    class_atom = RegisterClassEx(&wce);
+    class_atom = pRegisterClassExA(&wce);
     if (class_atom == 0)
         return(0);
 
-    raw_hwnd = CreateWindow(class_name, win_name, WS_OVERLAPPEDWINDOW,
+    raw_hwnd = pCreateWindowExA(0, class_name, win_name, WS_OVERLAPPEDWINDOW,
                         CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
                         CW_USEDEFAULT, HWND_MESSAGE, NULL, hInstance, NULL);
 
@@ -317,18 +407,18 @@ static void cleanup_window(void)
     if (raw_hwnd)
     {
         MSG Msg;
-        DestroyWindow(raw_hwnd);
-        while (PeekMessage(&Msg, raw_hwnd, 0, 0, PM_REMOVE))
+        pDestroyWindow(raw_hwnd);
+        while (pPeekMessageA(&Msg, raw_hwnd, 0, 0, PM_REMOVE))
         {
-            TranslateMessage(&Msg);
-            DispatchMessage(&Msg);
+            pTranslateMessage(&Msg);
+            pDispatchMessageA(&Msg);
         } /* while */
         raw_hwnd = 0;
     } /* if */
 
     if (class_atom)
     {
-        UnregisterClass(class_name, GetModuleHandle(NULL));
+        pUnregisterClassA(class_name, pGetModuleHandleA(NULL));
         class_atom = 0;
     } /* if */
 } /* cleanup_window */
@@ -388,7 +478,7 @@ static void get_device_product_name(char *name, size_t namesize,
 {
     const char regkeyroot[] = "System\\CurrentControlSet\\Enum\\";
     const char default_device_name[] = "Unidentified input device";
-    DWORD outbufsize = namesize;
+    DWORD outsize = namesize;
     DWORD regtype = REG_SZ;
     char *buf = NULL;
     char *ptr = NULL;
@@ -436,12 +526,12 @@ static void get_device_product_name(char *name, size_t namesize,
     *ptr = '\0';
     CopyMemory(keyname, regkeyroot, sizeof (regkeyroot) - 1);
     CopyMemory(keyname + (sizeof (regkeyroot) - 1), buf, i + 1);
-    rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE, keyname, 0, KEY_READ, &hkey);
+    rc = pRegOpenKeyExA(HKEY_LOCAL_MACHINE, keyname, 0, KEY_READ, &hkey);
     if (rc != ERROR_SUCCESS)
         return;
 
-    rc = RegQueryValueEx(hkey, "DeviceDesc", NULL, &regtype, name, &outbufsize);
-    RegCloseKey(hkey);
+    rc = pRegQueryValueExA(hkey, "DeviceDesc", NULL, &regtype, name, &outsize);
+    pRegCloseKey(hkey);
     if (rc != ERROR_SUCCESS)
     {
         /* msdn says failure may mangle the buffer, so default it again. */
@@ -532,10 +622,10 @@ static int windows_wminput_poll(ManyMouseEvent *outevent)
     } /* if */
 
     /* pump Windows for new hardware events... */
-    while (PeekMessage(&Msg, raw_hwnd, 0, 0, PM_REMOVE))
+    while (pPeekMessageA(&Msg, raw_hwnd, 0, 0, PM_REMOVE))
     {
-        TranslateMessage(&Msg);
-        DispatchMessage(&Msg);
+        pTranslateMessage(&Msg);
+        pDispatchMessageA(&Msg);
     } /* while */
 
     /* In case something new came in, give it to the app... */
