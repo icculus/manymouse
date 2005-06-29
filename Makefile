@@ -2,8 +2,10 @@
 macosx := false
 
 CFLAGS += -O0 -Wall -g -c
-
 CFLAGS += -I. -I/usr/src/linux/include
+
+CFLAGS += -ISDL-1.2.8/include
+LDFLAGS += -LSDL-1.2.8/lib -lSDL -lSDLmain
 
 CC := gcc
 LD := gcc
@@ -12,14 +14,14 @@ ifeq ($(strip $(macosx)),true)
   LDFLAGS += -framework Carbon -framework IOKit
 endif
 
-BASEOBJS := linux_evdev.o macosx_hidmanager.o manymouse.o
+BASEOBJS := linux_evdev.o macosx_hidmanager.o windows_wminput.o manymouse.o
 
 .PHONY: clean all
 
 all: detect_mice test_manymouse_stdio test_manymouse_sdl
 
 clean:
-	rm -f *.o example/*.o test_manymouse_stdio test_manymouse_stdio detect_mice
+	rm -f *.o *.obj *.exe example/*.o example/*.obj test_manymouse_stdio test_manymouse_stdio detect_mice
 
 %.o : %c
 	$(CC) $(CFLAGS) -o $@ $+

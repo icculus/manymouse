@@ -155,7 +155,7 @@ int main(int argc, char **argv)
     SDL_WM_SetCaption("Move your mice, R to rescan, G to (un)grab, S to show/hide, ESC to quit",
                         "manymouse");
 
-    SDL_WM_GrabInput(SDL_GRAB_ON);
+    /*SDL_WM_GrabInput(SDL_GRAB_ON);*/
 
     SDL_ShowCursor(cursor);
 

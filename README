@@ -35,6 +35,22 @@ Basic usage:
 
 There are examples of complete usage in the "example" directory.
 
+The test apps on Linux and MacOS X can be built by running "make" from a
+ terminal. The SDL test app will fail if Simple Directmedia Layer
+ (http://libsdl.org/) isn't installed. The stdio apps will still work.
+
+Windows isn't integrated into the Makefile, since most people will want to
+ put it in a VS.NET project anyhow, but here's the command line used to
+ build some of the standalone test apps:
+
+cl /I. *.c example\test_manymouse_stdio.c /Fetest_manymouse_stdio.exe
+cl /I. *.c example\detect_mice.c /Fedetect_mice.exe
+
+(yes, that's simple, that's the point)...getting the SDL test app to work can
+ be done, but takes too much effort unrelated to ManyMouse itself for this
+ document to explain.
+
+
 Some notes:
  - If a mouse is disconnected, it will not return future events, even if you
    plug it right back in. You will be alerted of disconnects programmatically

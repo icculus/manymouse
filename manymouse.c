@@ -24,7 +24,7 @@ static const ManyMouseDriver *mice_drivers[] =
     #if SUPPORT_XINPUT
     &ManyMouseDriver_xinput,
     #endif
-    #ifdef WINDOWS
+    #if ((defined _WIN32) || defined(__CYGWIN__))
     &ManyMouseDriver_windows,
     #endif
     #ifdef __linux__
