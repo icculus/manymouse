@@ -42,6 +42,7 @@ static HWND raw_hwnd = NULL;
 static const char *class_name = "ManyMouseRawInputCatcher";
 static const char *win_name = "ManyMouseRawInputMsgWindow";
 static ATOM class_atom = 0;
+static CRITICAL_SECTION mutex;
 
 typedef struct
 {
@@ -160,6 +161,19 @@ static LRESULT (WINAPI *pDispatchMessageA)(
 static BOOL (WINAPI *pDestroyWindow)(
     HWND hWnd
 );
+static void (WINAPI *pInitializeCriticalSection)(
+  LPCRITICAL_SECTION lpCriticalSection
+);
+static void (WINAPI *pEnterCriticalSection)(
+  LPCRITICAL_SECTION lpCriticalSection
+);
+static void (WINAPI *pLeaveCriticalSection)(
+  LPCRITICAL_SECTION lpCriticalSection
+);
+static void (WINAPI *pDeleteCriticalSection)(
+  LPCRITICAL_SECTION lpCriticalSection
+);
+
 static int symlookup(HMODULE dll, void **addr, const char *sym)
 {
     *addr = GetProcAddress(dll, sym);
@@ -212,6 +226,10 @@ static int find_api_symbols(void)
         return(0);
 
     LOOKUP(GetModuleHandleA);
+    LOOKUP(InitializeCriticalSection);
+    LOOKUP(EnterCriticalSection);
+    LOOKUP(LeaveCriticalSection);
+    LOOKUP(DeleteCriticalSection);
 
     #undef LOOKUP
 
@@ -220,7 +238,6 @@ static int find_api_symbols(void)
 } /* find_api_symbols */
 
 
-/* !!! FIXME: mutex this and pollevent? */
 static void queue_event(const ManyMouseEvent *event)
 {
     input_events_write = ((input_events_write + 1) % MAX_EVENTS);
@@ -264,6 +281,8 @@ static void queue_from_rawinput(const RAWINPUT *raw)
      */
 
     event.device = i;
+
+    pEnterCriticalSection(&mutex);
 
     if (mouse->usFlags & MOUSE_MOVE_ABSOLUTE)
     {
@@ -323,11 +342,13 @@ static void queue_from_rawinput(const RAWINPUT *raw)
         if (mouse->usButtonData != 0)  /* !!! FIXME: can this ever be zero? */
         {
             event.type = MANYMOUSE_EVENT_SCROLL;
-            event.item = 0;
+            event.item = 0;  /* !!! FIXME: horizontal wheel? */
             event.value = (mouse->usButtonData > 0) ? 1 : -1;
             queue_event(&event);
         } /* if */
     } /* if */
+
+    pLeaveCriticalSection(&mutex);
 } /* queue_from_rawinput */
 
 
@@ -390,13 +411,18 @@ static int init_event_queue(void)
     if (raw_hwnd == NULL)
         return(0);
 
+    pInitializeCriticalSection(&mutex);
+
     ZeroMemory(&rid, sizeof (rid));
     rid.usUsagePage = 1; /* GenericDesktop page */
     rid.usUsage = 2; /* GeneralDestop Mouse usage. */
     rid.dwFlags = RIDEV_INPUTSINK;
     rid.hwndTarget = raw_hwnd;
     if (!pRegisterRawInputDevices(&rid, 1, sizeof (rid)))
+    {
+        pDeleteCriticalSection(&mutex);
         return(0);
+    } /* if */
 
     return(1);
 } /* init_event_queue */
@@ -542,7 +568,6 @@ static void get_device_product_name(char *name, size_t namesize,
 } /* get_device_product_name */
 
 
-/* !!! FIXME: move this closer to the init entry point... */
 static void init_mouse(const RAWINPUTDEVICELIST *dev)
 {
     MouseStruct *mouse = &mice[available_mice];
@@ -598,6 +623,7 @@ static void windows_wminput_quit(void)
     pRegisterRawInputDevices(&rid, 1, sizeof (rid));
     cleanup_window();
     available_mice = 0;
+    pDeleteCriticalSection(&mutex);
 } /* windows_wminput_quit */
 
 
@@ -609,35 +635,42 @@ static const char *windows_wminput_name(unsigned int index)
 } /* windows_wminput_name */
 
 
-static int windows_wminput_poll(ManyMouseEvent *outevent)
+static int windows_wminput_poll(ManyMouseEvent *ev)
 {
     MSG Msg;  /* run the queue for WM_INPUT messages, etc ... */
+    int found = 0;
 
     /* ...favor existing events in the queue... */
+    pEnterCriticalSection(&mutex);
     if (input_events_read != input_events_write)  /* no events if equal. */
     {
-        CopyMemory(outevent, &input_events[input_events_read], sizeof (*outevent));
+        CopyMemory(ev, &input_events[input_events_read], sizeof (*ev));
         input_events_read = ((input_events_read + 1) % MAX_EVENTS);
-        return(1);
+        found = 1;
+    } /* if */
+    pLeaveCriticalSection(&mutex);
+
+    if (!found)
+    {
+        /* pump Windows for new hardware events... */
+        while (pPeekMessageA(&Msg, raw_hwnd, 0, 0, PM_REMOVE))
+        {
+            pTranslateMessage(&Msg);
+            pDispatchMessageA(&Msg);
+        } /* while */
+
+        /* In case something new came in, give it to the app... */
+        pEnterCriticalSection(&mutex);
+        if (input_events_read != input_events_write)  /* no events if equal. */
+        {
+            CopyMemory(ev, &input_events[input_events_read], sizeof (*ev));
+            input_events_read = ((input_events_read + 1) % MAX_EVENTS);
+            found = 1;
+        } /* if */
+        pLeaveCriticalSection(&mutex);
     } /* if */
 
-    /* pump Windows for new hardware events... */
-    while (pPeekMessageA(&Msg, raw_hwnd, 0, 0, PM_REMOVE))
-    {
-        pTranslateMessage(&Msg);
-        pDispatchMessageA(&Msg);
-    } /* while */
-
-    /* In case something new came in, give it to the app... */
-    if (input_events_read != input_events_write)  /* no events if equal. */
-    {
-        /* take event off the queue. */
-        CopyMemory(outevent, &input_events[input_events_read], sizeof (*outevent));
-        input_events_read = ((input_events_read + 1) % MAX_EVENTS);
-        return(1);
-    } /* if */
-
-    return(0);  /* no events at the moment. */
+    return(found);
 } /* windows_wminput_poll */
 
 
