@@ -131,139 +131,6 @@ static int find_api_symbols(void)
 } /* find_api_symbols */
 
 
-static int accept_device(const RAWINPUTDEVICELIST *dev)
-{
-    const char rdp_ident[] = "\\??\\Root#RDP_MOU#0000#";
-    char *buf = NULL;
-    UINT ct = 0;
-
-    if (dev->dwType != RIM_TYPEMOUSE)
-        return(0);  /* keyboard or some other fruity thing. */
-
-    if (pGetRawInputDeviceInfoA(dev->hDevice, RIDI_DEVICENAME, NULL, &ct) < 0)
-        return(0);
-
-    /* ct == is chars, not bytes, but we used the ASCII version. */
-    buf = (char *) alloca(ct);
-    if (buf == NULL)
-        return(0);
-
-    if (pGetRawInputDeviceInfoA(dev->hDevice, RIDI_DEVICENAME, buf, &ct) < 0)
-        return(0);
-
-    /*
-     * Apparently there's a fake "RDP" device...I guess this is
-     *  "Remote Desktop Protocol" for controlling the system pointer
-     *  remotely via Windows Remote Desktop, but that's just a guess.
-     * At any rate, we don't want that device, so skip it if detected.
-     *
-     * Idea for this found here:
-     *   http://link.mywwwserver.com/~jstookey/arcade/rawmouse/raw_mouse.c
-     */
-
-    /* avoiding memcmp here so we don't get a C runtime dependency... */
-    if (ct >= sizeof (rdp_ident) - 1)
-    {
-        int i;
-        for (i = 0; i < sizeof (rdp_ident) - 1; i++)
-        {
-            if (buf[i] != rdp_ident[i])
-                break;
-        } /* for */
-
-        if (i == sizeof (rdp_ident) - 1)
-            return(0);  /* this is an RDP thing. Skip this device. */
-    } /* if */
-
-    return(1);  /* we want this device. */
-} /* reject_device */
-
-
-/* !!! FIXME: this code sucks. */
-static void get_device_product_name(char *name, size_t namesize,
-                                     const RAWINPUTDEVICELIST *dev)
-{
-    const char regkeyroot[] = "System\\CurrentControlSet\\Enum\\";
-    const char default_device_name[] = "Unidentified input device";
-    DWORD outbufsize = namesize;
-    DWORD regtype = REG_SZ;
-    char *buf = NULL;
-    char *ptr = NULL;
-    char *keyname = NULL;
-    UINT i = 0;
-    UINT ct = 0;
-    LONG rc = 0;
-    HKEY hkey;
-
-    *name = '\0';  /* really insane default. */
-    if (sizeof (default_device_name) >= namesize)
-        return;
-
-    /* in case we can't stumble upon something better... */
-    CopyMemory(name, default_device_name, sizeof (default_device_name));
-
-    if (pGetRawInputDeviceInfoA(dev->hDevice, RIDI_DEVICENAME, NULL, &ct) < 0)
-        return;
-
-    /* ct == is chars, not bytes, but we used the ASCII version. */
-    buf = (char *) alloca(ct+1);
-    keyname = (char *) alloca(ct + sizeof (regkeyroot));
-    if ((buf == NULL) || (keyname == NULL))
-        return;
-
-    if (pGetRawInputDeviceInfoA(dev->hDevice, RIDI_DEVICENAME, buf, &ct) < 0)
-        return;
-
-    /*
-     * This string tap dancing gets us a registry keyname in this form:
-     *   SYSTEM\CurrentControlSet\Enum\BUSTYPE\DEVICECLASS\DEVICEID
-     * (those are my best-guess for the actual elements, but the format
-     *  appears to be sound.)
-     */
-    ct -= 4;
-    buf += 4;  /* skip the "\\??\\" on the front of the string. */
-    for (i = 0, ptr = buf; i < ct; i++, ptr++)  /* convert '#' to '\\' ... */
-    {
-        if (*ptr == '#')
-            *ptr = '\\';
-        else if (*ptr == '{')  /* hit the GUID part of the string. */
-            break;
-    } /* for */
-
-    *ptr = '\0';
-    CopyMemory(keyname, regkeyroot, sizeof (regkeyroot) - 1);
-    CopyMemory(keyname + (sizeof (regkeyroot) - 1), buf, i + 1);
-    rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE, keyname, 0, KEY_READ, &hkey);
-    if (rc != ERROR_SUCCESS)
-        return;
-
-    rc = RegQueryValueEx(hkey, "DeviceDesc", NULL, &regtype, name, &outbufsize);
-    RegCloseKey(hkey);
-    if (rc != ERROR_SUCCESS)
-    {
-        /* msdn says failure may mangle the buffer, so default it again. */
-        CopyMemory(name, default_device_name, sizeof (default_device_name));
-        return;
-    } /* if */
-    name[namesize-1] = '\0';  /* just in case. */
-} /* get_device_product_name */
-
-
-/* !!! FIXME: move this closer to the init entry point... */
-static void init_mouse(const RAWINPUTDEVICELIST *dev)
-{
-    MouseStruct *mouse = &mice[available_mice];
-
-    if (!accept_device(dev))
-        return;
-
-    ZeroMemory(mouse, sizeof (MouseStruct));
-    get_device_product_name(mouse->name, sizeof (mouse->name), dev);
-    mouse->handle = dev->hDevice;
-    available_mice++;  /* we're good. */
-} /* init_mouse */
-
-
 static void queue_event(const ManyMouseEvent *event)
 {
     input_events_write = ((input_events_write + 1) % MAX_EVENTS);
@@ -465,6 +332,139 @@ static void cleanup_window(void)
         class_atom = 0;
     } /* if */
 } /* cleanup_window */
+
+
+static int accept_device(const RAWINPUTDEVICELIST *dev)
+{
+    const char rdp_ident[] = "\\??\\Root#RDP_MOU#0000#";
+    char *buf = NULL;
+    UINT ct = 0;
+
+    if (dev->dwType != RIM_TYPEMOUSE)
+        return(0);  /* keyboard or some other fruity thing. */
+
+    if (pGetRawInputDeviceInfoA(dev->hDevice, RIDI_DEVICENAME, NULL, &ct) < 0)
+        return(0);
+
+    /* ct == is chars, not bytes, but we used the ASCII version. */
+    buf = (char *) alloca(ct);
+    if (buf == NULL)
+        return(0);
+
+    if (pGetRawInputDeviceInfoA(dev->hDevice, RIDI_DEVICENAME, buf, &ct) < 0)
+        return(0);
+
+    /*
+     * Apparently there's a fake "RDP" device...I guess this is
+     *  "Remote Desktop Protocol" for controlling the system pointer
+     *  remotely via Windows Remote Desktop, but that's just a guess.
+     * At any rate, we don't want that device, so skip it if detected.
+     *
+     * Idea for this found here:
+     *   http://link.mywwwserver.com/~jstookey/arcade/rawmouse/raw_mouse.c
+     */
+
+    /* avoiding memcmp here so we don't get a C runtime dependency... */
+    if (ct >= sizeof (rdp_ident) - 1)
+    {
+        int i;
+        for (i = 0; i < sizeof (rdp_ident) - 1; i++)
+        {
+            if (buf[i] != rdp_ident[i])
+                break;
+        } /* for */
+
+        if (i == sizeof (rdp_ident) - 1)
+            return(0);  /* this is an RDP thing. Skip this device. */
+    } /* if */
+
+    return(1);  /* we want this device. */
+} /* accept_device */
+
+
+/* !!! FIXME: this code sucks. */
+static void get_device_product_name(char *name, size_t namesize,
+                                     const RAWINPUTDEVICELIST *dev)
+{
+    const char regkeyroot[] = "System\\CurrentControlSet\\Enum\\";
+    const char default_device_name[] = "Unidentified input device";
+    DWORD outbufsize = namesize;
+    DWORD regtype = REG_SZ;
+    char *buf = NULL;
+    char *ptr = NULL;
+    char *keyname = NULL;
+    UINT i = 0;
+    UINT ct = 0;
+    LONG rc = 0;
+    HKEY hkey;
+
+    *name = '\0';  /* really insane default. */
+    if (sizeof (default_device_name) >= namesize)
+        return;
+
+    /* in case we can't stumble upon something better... */
+    CopyMemory(name, default_device_name, sizeof (default_device_name));
+
+    if (pGetRawInputDeviceInfoA(dev->hDevice, RIDI_DEVICENAME, NULL, &ct) < 0)
+        return;
+
+    /* ct == is chars, not bytes, but we used the ASCII version. */
+    buf = (char *) alloca(ct+1);
+    keyname = (char *) alloca(ct + sizeof (regkeyroot));
+    if ((buf == NULL) || (keyname == NULL))
+        return;
+
+    if (pGetRawInputDeviceInfoA(dev->hDevice, RIDI_DEVICENAME, buf, &ct) < 0)
+        return;
+
+    /*
+     * This string tap dancing gets us a registry keyname in this form:
+     *   SYSTEM\CurrentControlSet\Enum\BUSTYPE\DEVICECLASS\DEVICEID
+     * (those are my best-guess for the actual elements, but the format
+     *  appears to be sound.)
+     */
+    ct -= 4;
+    buf += 4;  /* skip the "\\??\\" on the front of the string. */
+    for (i = 0, ptr = buf; i < ct; i++, ptr++)  /* convert '#' to '\\' ... */
+    {
+        if (*ptr == '#')
+            *ptr = '\\';
+        else if (*ptr == '{')  /* hit the GUID part of the string. */
+            break;
+    } /* for */
+
+    *ptr = '\0';
+    CopyMemory(keyname, regkeyroot, sizeof (regkeyroot) - 1);
+    CopyMemory(keyname + (sizeof (regkeyroot) - 1), buf, i + 1);
+    rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE, keyname, 0, KEY_READ, &hkey);
+    if (rc != ERROR_SUCCESS)
+        return;
+
+    rc = RegQueryValueEx(hkey, "DeviceDesc", NULL, &regtype, name, &outbufsize);
+    RegCloseKey(hkey);
+    if (rc != ERROR_SUCCESS)
+    {
+        /* msdn says failure may mangle the buffer, so default it again. */
+        CopyMemory(name, default_device_name, sizeof (default_device_name));
+        return;
+    } /* if */
+    name[namesize-1] = '\0';  /* just in case. */
+} /* get_device_product_name */
+
+
+/* !!! FIXME: move this closer to the init entry point... */
+static void init_mouse(const RAWINPUTDEVICELIST *dev)
+{
+    MouseStruct *mouse = &mice[available_mice];
+
+    if (accept_device(dev))
+    {
+        ZeroMemory(mouse, sizeof (MouseStruct));
+        get_device_product_name(mouse->name, sizeof (mouse->name), dev);
+        mouse->handle = dev->hDevice;
+        available_mice++;  /* we're good. */
+    } /* if */
+} /* init_mouse */
 
 
 static int windows_wminput_init(void)
