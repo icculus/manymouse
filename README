@@ -18,16 +18,20 @@ The "example" directory contains complete programs to demostrate the use of
  the ManyMouse API in action. These files don't need to be copied into your
  project, but you can cut-and-paste their contents as needed.
 
-To use:
+Basic usage:
+ - Copy *.c and *.h from the base of the manymouse folder to your project.
+ - Add the new files to your project's build system.
  - #include "manymouse.h" in your source code
  - Call ManyMouse_Init(); if it returns > 0, it found mice it can use.
  - Call ManyMouse_DeviceName() if you want to know the human-readable
-   name of each device ("Logitech USB mouse", etc). This string will be in
-   UTF-8 format, which looks like regular ASCII for most devices.
+   name of each device ("Logitech USB mouse", etc).
  - Read input from the mice with ManyMouse_PollEvent() in a loop until the
-   function returns 0. Each time through the loop, example the event that
-   was returned and react appropriately.
- - When you are done, call ManyMouse_Quit().
+   function returns 0. Each time through the loop, examine the event that
+   was returned and react appropriately. Do this with regular frequency:
+   generally, a good rule is to poll for ManyMouse events at the same time
+   you poll for other system GUI events...once per iteration of your
+   program's main loop.
+ - When you are done processing mice, call ManyMouse_Quit().
 
 There are examples of complete usage in the "example" directory.
 
@@ -62,16 +66,15 @@ Some notes:
    relies on APIs that are new to XP...it uses LoadLibrary() on User32.dll and
    GetProcAddress() to get all the Windows entry points it uses, so on pre-XP
    systems, it will run, but fail to find any mice in ManyMouse_Init().
-   Your app must have an event queue before calling ManyMouse_Init(), and must
-   _never_ handle WM_INPUT messages (which means never calling any of the
-   "RawInput" APIs...ManyMouse does this internally, hooking your existing
-   event queue, to abstract the Windows dependency in the library's API).
-   Pretty much the only use for WM_INPUT is what ManyMouse does for you, so
-   this shouldn't be a serious limitation to your app. If you happen to be
-   using Simple Directmedia Layer (http://libsdl.org/) then you just need to
-   have a successful call to SDL_SetVideoMode() before calling
-   ManyMouse_Init(). We'll accept a contributed .NET assembly for this
-   library, but have no plans to implement one ourselves.
+   ManyMouse does not require a window to run, and can even be used by console
+   (stdio) applications. Please note that using DirectInput at the same time
+   as ManyMouse can cause problems; ManyMouse does not use DirectInput, due
+   to DI8's limitations, but it's parallel use seems to prevent ManyMouse from
+   getting mouse input anyhow. This is mostly not an issue, but users of
+   Simple Directmedia Layer (SDL, http://libsdl.org/) may find that it uses
+   DirectInput behind the scenes. We are still researching the issue, but we
+   recommend using SDL's "windib" target in the meantime to avoid this
+   problem.
 
  - On Linux, we first try to use the /dev/input/event* devices; this means
    that ManyMouse can function with or without an X server. Eventually we'll
@@ -83,7 +86,9 @@ Some notes:
    or without a GUI. We'll accept contributed Java bindings, but have no plans
    to implement those ourselves. This code may or may not work on Darwin
    (we're not sure if IOKit is available to that platform); reports of
-   success are welcome.
+   success are welcome. If you aren't already, you will need to make sure you
+   link against the "Carbon" and "IOKit" frameworks once you add ManyMouse to
+   your project.
 
  - Support for other platforms than MacOS X, Linux, and Windows is not planned,
    but contributions of implementations for other platforms are welcome.
