@@ -95,6 +95,14 @@ struct recElement
 typedef struct recElement recElement;
 typedef recElement* pRecElement;
 
+// ryan added this.
+typedef enum
+{
+    DISCONNECT_CONNECTED,
+    DISCONNECT_TELLUSER,
+    DISCONNECT_COMPLETE
+} DisconnectState;
+
 struct recDevice
 {
     void * interface;						// interface to device, NULL = no interface
@@ -124,6 +132,7 @@ struct recDevice
     long dials;								// number of dials (calculated, not reported by device)
     long wheels;							// number of wheels (calculated, not reported by device)
     recElement* pListElements; 				// head of linked list of elements 
+    DisconnectState disconnect; // (ryan added this.)
     struct recDevice* pNext; 				// next device
 };
 typedef struct recDevice recDevice;
@@ -871,6 +880,7 @@ static unsigned long HIDReleaseAllDeviceQueues (void)
     return result;
 }
 
+
 // ---------------------------------
 // Get the next event in the queue for a device
 // elements or entire device should be queued prior to calling this with HIDQueueElement or HIDQueueDevice
@@ -1022,17 +1032,27 @@ static void hid_DeviceNotification( void *refCon,
 
     if (messageType == kIOMessageServiceIsTerminated)
     {
-        printf("Device 0x%08x \"%s\"removed.\n", service, pDevice->product);
+        //printf("Device 0x%08x \"%s\"removed.\n", service, pDevice->product);
+        // ryan added this.
+        if (pDevice->disconnect == DISCONNECT_CONNECTED)
+    	    pDevice->disconnect = DISCONNECT_TELLUSER;
 
         // Free the data we're no longer using now that the device is going away
-		hid_DisposeDevice (pDevice);
+        // ryan commented this out.
+		//hid_DisposeDevice (pDevice);
     }
 }
 #else
 
 static void hid_RemovalCallbackFunction(void * target, IOReturn result, void * refcon, void * sender)
 {
-	hid_DisposeDevice ((pRecDevice) target);
+    // ryan commented this out.
+	//hid_DisposeDevice ((pRecDevice) target);
+
+    // ryan added this.
+    pRecDevice = (pRecDevice) target;
+    if (pDevice->disconnect == DISCONNECT_CONNECTED)
+        pDevice->disconnect = DISCONNECT_TELLUSER;
 }
 
 #endif USE_NOTIFICATIONS
@@ -1430,6 +1450,10 @@ static unsigned long  HIDQueueDevice (pRecDevice pDevice)
 
 #include "manymouse.h"
 
+static int available_mice = 0;
+static pRecDevice *devices = NULL;
+
+
 static int poll_mouse(pRecDevice mouse, ManyMouseEvent *outevent)
 {
     int unhandled = 1;
@@ -1489,10 +1513,6 @@ static int poll_mouse(pRecDevice mouse, ManyMouseEvent *outevent)
 
     return(1);  /* got a valid event */
 } /* poll_mouse */
-
-
-static int available_mice = 0;
-static pRecDevice *devices = NULL;
 
 
 static void macosx_hidmanager_quit(void)
@@ -1572,13 +1592,21 @@ static int macosx_hidmanager_poll(ManyMouseEvent *event)
     {
         while (i < available_mice)
         {
-            if (devices[i])
+            pRecDevice dev = devices[i];
+            if ((dev) && (dev->disconnect != DISCONNECT_COMPLETE))
             {
-                if (poll_mouse(devices[i], event))
+                event->device = i;
+
+                /* see if mouse was unplugged since last polling... */
+                if (dev->disconnect == DISCONNECT_TELLUSER)
                 {
-                    event->device = i;
+                    dev->disconnect = DISCONNECT_COMPLETE;
+                    event->type = MANYMOUSE_EVENT_DISCONNECT;
                     return(1);
                 } /* if */
+
+                if (poll_mouse(dev, event))
+                    return(1);
             } /* if */
             i++;
         } /* while */

@@ -2,7 +2,6 @@
 - Hide absolute input (always convert to relative internally?)
 - return -1 on init failure, instead of 0, which could mean successful init,
   but no devices available?
-- Windows and Mac ports don't honor the disconnect event.
 - Look for FIXMEs.
 
 /* end of TODO ... */
