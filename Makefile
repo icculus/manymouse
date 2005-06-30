@@ -4,8 +4,8 @@ macosx := false
 CFLAGS += -O0 -Wall -g -c
 CFLAGS += -I. -I/usr/src/linux/include
 
-CFLAGS += -ISDL-1.2.8/include
-LDFLAGS += -LSDL-1.2.8/lib -lSDL -lSDLmain
+#CFLAGS += -ISDL-1.2.8/include
+#LDFLAGS += -LSDL-1.2.8/lib -lSDL -lSDLmain
 
 CC := gcc
 LD := gcc
