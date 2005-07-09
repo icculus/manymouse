@@ -50,7 +50,14 @@ static void update_mice(int screen_w, int screen_h)
         }
 
         else if (event.type == MANYMOUSE_EVENT_ABSMOTION)
-            ; /* !!! FIXME: do something with this. */
+        {
+            float val = (float) (event.value - event.minval);
+            float maxval = (float) (event.maxval - event.minval);
+            if (event.item == 0)
+                mouse->x = (val / maxval) * screen_w;
+            else if (event.item == 1)
+                mouse->y = (val / maxval) * screen_h;
+        }
 
         else if (event.type == MANYMOUSE_EVENT_BUTTON)
             ; /* !!! FIXME: do something with this. */
