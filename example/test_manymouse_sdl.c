@@ -16,7 +16,7 @@
 
 #define MAX_MICE 128
 
-int available_mice = 0;
+static int available_mice = 0;
 
 typedef struct
 {
@@ -25,6 +25,7 @@ typedef struct
     int y;
     SDL_Color color;
     char name[64];
+    Uint32 buttons;
 } Mouse;
 
 static Mouse mice[MAX_MICE];
@@ -60,7 +61,15 @@ static void update_mice(int screen_w, int screen_h)
         }
 
         else if (event.type == MANYMOUSE_EVENT_BUTTON)
-            ; /* !!! FIXME: do something with this. */
+        {
+            if (event.item < 32)
+            {
+                if (event.value)
+                    mouse->buttons |= (1 << event.item);
+                else
+                    mouse->buttons &= ~(1 << event.item);
+            }
+        }
 
         else if (event.type == MANYMOUSE_EVENT_SCROLL)
             ; /* !!! FIXME: do something with this. */
@@ -73,20 +82,31 @@ static void update_mice(int screen_w, int screen_h)
 
 static void draw_mouse(SDL_Surface *screen, int idx)
 {
-    SDL_Rect r = { mice[idx].x, mice[idx].y, 10, 10 };
-    Uint32 color;
+    int i;
+    Mouse *mouse = &mice[idx];
+    SDL_Rect r = { mouse->x, mouse->y, 10, 10 };
+    Uint32 color = SDL_MapRGB(screen->format, mouse->color.r,
+                              mouse->color.g, mouse->color.b);
 
-    if (!mice[idx].connected)
-        return;
+    if (mouse->x < 0) mouse->x = 0;
+    if (mouse->x >= screen->w) mouse->x = screen->w-1;
+    if (mouse->y < 0) mouse->y = 0;
+    if (mouse->y >= screen->h) mouse->y = screen->h-1;
+    SDL_FillRect(screen, &r, color);  /* draw a square for mouse position. */
 
-    if (mice[idx].x < 0) mice[idx].x = 0;
-    if (mice[idx].x >= screen->w) mice[idx].x = screen->w-1;
-    if (mice[idx].y < 0) mice[idx].y = 0;
-    if (mice[idx].y >= screen->h) mice[idx].y = screen->h-1;
-
-    color = SDL_MapRGB(screen->format, mice[idx].color.r,
-                              mice[idx].color.g, mice[idx].color.b);
-    SDL_FillRect(screen, &r, color);
+    /* now draw some buttons... */
+    color = SDL_MapRGB(screen->format, 0xFF, 0xFF, 0xFF);
+    for (i = 0; i < 32; i++)
+    {
+        if (mouse->buttons & (1 << i))  /* pressed? */
+        {
+            r.w = 20;
+            r.x = i * r.w;
+            r.h = 20;
+            r.y = screen->h - ((idx+1) * r.h);
+            SDL_FillRect(screen, &r, color);
+        }
+    }
 }
 
 static void draw_mice(SDL_Surface *screen)
@@ -94,7 +114,10 @@ static void draw_mice(SDL_Surface *screen)
     int i;
     SDL_FillRect(screen, NULL, SDL_MapRGB(screen->format, 0, 0, 0));
     for (i = 0; i < available_mice; i++)
-        draw_mouse(screen, i);
+    {
+        if (mice[i].connected)
+            draw_mouse(screen, i);
+    }
     SDL_Flip(screen);
 }
 
