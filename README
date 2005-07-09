@@ -46,9 +46,9 @@ Windows isn't integrated into the Makefile, since most people will want to
 cl /I. *.c example\test_manymouse_stdio.c /Fetest_manymouse_stdio.exe
 cl /I. *.c example\detect_mice.c /Fedetect_mice.exe
 
-(yes, that's simple, that's the point)...getting the SDL test app to work can
- be done, but takes too much effort unrelated to ManyMouse itself for this
- document to explain.
+(yes, that's simple, that's the point)...getting the SDL test app to work
+ on Windows can be done, but takes too much effort unrelated to ManyMouse
+ itself for this document to explain.
 
 
 Some notes:
@@ -85,7 +85,7 @@ Some notes:
    ManyMouse does not require a window to run, and can even be used by console
    (stdio) applications. Please note that using DirectInput at the same time
    as ManyMouse can cause problems; ManyMouse does not use DirectInput, due
-   to DI8's limitations, but it's parallel use seems to prevent ManyMouse from
+   to DI8's limitations, but its parallel use seems to prevent ManyMouse from
    getting mouse input anyhow. This is mostly not an issue, but users of
    Simple Directmedia Layer (SDL, http://libsdl.org/) may find that it uses
    DirectInput behind the scenes. We are still researching the issue, but we
