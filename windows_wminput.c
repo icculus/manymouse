@@ -635,10 +635,50 @@ static const char *windows_wminput_name(unsigned int index)
 } /* windows_wminput_name */
 
 
+/*
+ * Windows doesn't send a WM_INPUT event when you unplug a mouse,
+ *  so we try to do a basic query by device handle here; if the
+ *  query fails, we assume the device has vanished and generate a
+ *  disconnect.
+ */
+static int check_for_disconnects(ManyMouseEvent *ev)
+{
+    /*
+     * (i) is static so we iterate through all mice round-robin and check
+     *  one mouse per call to ManyMouse_PollEvent(). This makes this test O(1).
+     */
+    static unsigned int i = 0;
+    MouseStruct *mouse = NULL;
+
+    if (++i >= available_mice)  /* check first in case of redetect */
+        i = 0;
+
+    mouse = &mice[i];
+    if (mouse->handle != NULL)  /* not NULL == still plugged in. */
+    {
+        UINT size = 0;
+        UINT rc = pGetRawInputDeviceInfoA(mouse->handle, RIDI_DEVICEINFO,
+                                          NULL, &size);
+        if (rc == (UINT) -1)  /* failed...probably unplugged... */
+        {
+            mouse->handle = NULL;
+            ev->type = MANYMOUSE_EVENT_DISCONNECT;
+            ev->device = i;
+            return(1);
+        } /* if */
+    } /* if */
+
+    return(0);  /* no disconnect event this time. */
+} /* check_for_disconnects */
+
+
 static int windows_wminput_poll(ManyMouseEvent *ev)
 {
     MSG Msg;  /* run the queue for WM_INPUT messages, etc ... */
     int found = 0;
+
+    if (check_for_disconnects(ev))
+        return(1);
 
     /* ...favor existing events in the queue... */
     pEnterCriticalSection(&mutex);
