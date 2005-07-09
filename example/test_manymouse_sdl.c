@@ -15,6 +15,7 @@
 #include "SDL.h"
 
 #define MAX_MICE 128
+#define SCROLLWHEEL_DISPLAY_TICKS 100
 
 static int available_mice = 0;
 
@@ -26,6 +27,10 @@ typedef struct
     SDL_Color color;
     char name[64];
     Uint32 buttons;
+    Uint32 scrolluptick;
+    Uint32 scrolldowntick;
+    Uint32 scrolllefttick;
+    Uint32 scrollrighttick;
 } Mouse;
 
 static Mouse mice[MAX_MICE];
@@ -72,10 +77,27 @@ static void update_mice(int screen_w, int screen_h)
         }
 
         else if (event.type == MANYMOUSE_EVENT_SCROLL)
-            ; /* !!! FIXME: do something with this. */
+        {
+            if (event.item == 0)
+            {
+                if (event.value < 0)
+                    mouse->scrolldowntick = SDL_GetTicks();
+                else
+                    mouse->scrolluptick = SDL_GetTicks();
+            }
+            else if (event.item == 1)
+            {
+                if (event.value < 0)
+                    mouse->scrolllefttick = SDL_GetTicks();
+                else
+                    mouse->scrollrighttick = SDL_GetTicks();
+            }
+        }
 
         else if (event.type == MANYMOUSE_EVENT_DISCONNECT)
+        {
             mice[event.device].connected = 0;
+        }
     }
 }
 
@@ -83,6 +105,7 @@ static void update_mice(int screen_w, int screen_h)
 static void draw_mouse(SDL_Surface *screen, int idx)
 {
     int i;
+    Uint32 now = SDL_GetTicks();
     Mouse *mouse = &mice[idx];
     SDL_Rect r = { mouse->x, mouse->y, 10, 10 };
     Uint32 color = SDL_MapRGB(screen->format, mouse->color.r,
@@ -107,6 +130,29 @@ static void draw_mouse(SDL_Surface *screen, int idx)
             SDL_FillRect(screen, &r, color);
         }
     }
+
+    /* draw scroll wheels... */
+
+    #define DRAW_SCROLLWHEEL(var, item) \
+        if (var > 0) \
+        { \
+            if ((now - var) > SCROLLWHEEL_DISPLAY_TICKS) \
+                var = 0; \
+            else \
+            { \
+                r.w = r.h = 20; \
+                r.y = idx * r.h; \
+                r.x = item * r.w; \
+                SDL_FillRect(screen, &r, color); \
+            } \
+        }
+
+    DRAW_SCROLLWHEEL(mouse->scrolluptick, 0);
+    DRAW_SCROLLWHEEL(mouse->scrolldowntick, 1);
+    DRAW_SCROLLWHEEL(mouse->scrolllefttick, 2);
+    DRAW_SCROLLWHEEL(mouse->scrollrighttick, 3);
+
+    #undef DRAW_SCROLLWHEEL
 }
 
 static void draw_mice(SDL_Surface *screen)
