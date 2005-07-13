@@ -60,7 +60,7 @@ void score(int who)
 		printf("player 1 has %d goals", score1);
 	} else{
 		score2++;
-		printf("player 2 has $d goals", score2);
+		printf("player 2 has %d goals", score2);
 	}
 
     snprintf(buf, len, fmt, score1, score2);
