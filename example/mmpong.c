@@ -68,8 +68,8 @@ void score(int who)
 	ball->x = 320 ;
 	ball->y = rand() % 480 ;
 	ball->speed = 1;
-	if(rand() % 2 == 1) ball->dir_h = UP; else ball->dir_h = DOWN;
-	if(rand() % 2 == 2) ball->dir_w = LEFT; else ball->dir_w = RIGHT;
+	if(rand() % 2 == 0) ball->dir_h = UP; else ball->dir_h = DOWN;
+	if(rand() % 2 == 0) ball->dir_w = LEFT; else ball->dir_w = RIGHT;
 }
 
 static void initial_setup(int screen_w, int screen_h)
@@ -82,7 +82,7 @@ static void initial_setup(int screen_w, int screen_h)
     for (i = 0; i < MAX_MICE; i++)
     {
         Mouse *mouse = &mice[i];
-        if(i == 0){
+        if((i % 2) == 0){
 			mouse->x = 2;
 			mouse->y = screen_h / 2;
 		} else {
@@ -94,8 +94,8 @@ static void initial_setup(int screen_w, int screen_h)
         mouse->color.g = (int) (255.0*rand()/(RAND_MAX+1.0));
         mouse->color.b = (int) (255.0*rand()/(RAND_MAX+1.0));
     }
-	ball->x = 320;
-	ball->y = rand() %480 ;
+	ball->x = screen_w / 2;
+	ball->y = rand() % screen_h;
 	ball->speed = 1;
 	ball->dir_h = UP;
 	ball->dir_w = LEFT;
