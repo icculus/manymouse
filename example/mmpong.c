@@ -18,7 +18,7 @@ TODO:
 
 #include "SDL.h"
 #include "manymouse.h"
-#define MAX_MICE 2
+#define MAX_MICE 32
 #define LEFT 0
 #define RIGHT 1
 #define UP 2
@@ -164,6 +164,7 @@ static void update_ball(int screen_w, int screen_h)
     static Uint32 lastupdate = 0;
     Uint32 now = SDL_GetTicks();
 	Ball *ball = &puck;
+	int i = 0;
 
     if (now - lastupdate < 10)
         return;
@@ -171,13 +172,35 @@ static void update_ball(int screen_w, int screen_h)
     lastupdate += 10;
 
 	if(ball->y < 0) ball->dir_h = DOWN;
-	if(ball->y > screen_h - 10) ball->dir_h = UP;
+	else if(ball->y > screen_h - 10) ball->dir_h = UP;
+
 	if(ball->x < 15){
-		if(!((ball->y > mice[0].y) && ball->y < mice[0].y + 70)) score(2); else ball->dir_w = RIGHT;
+		int scored = 1;
+		for (i = 0; i < available_mice; i += 2) {
+			if((ball->y >= mice[i].y) && (ball->y < mice[i].y + 70)) {
+				scored = 0;
+				break;
+			}
+		}
+		if (scored)
+			score(2);
+		else
+			ball->dir_w = RIGHT;
 	}
-	if(ball->x > (screen_w - 25)) {
-		if(!((ball->y > mice[1].y) && ball->y < mice[1].y + 70)) score(1); else ball->dir_w = LEFT;
+	else if(ball->x > (screen_w - 25)) {
+		int scored = 1;
+		for (i = 1; i < available_mice; i += 2) {
+			if((ball->y >= mice[i].y) && (ball->y < mice[i].y + 70)) {
+				scored = 0;
+				break;
+			}
+		}
+		if (scored)
+			score(1);
+		else
+			ball->dir_w = LEFT;
 	}
+
 	if(ball->dir_w == LEFT && ball->dir_h == UP){
 		ball->x -= 3 ;
 		ball->y -= 3 ;
