@@ -153,7 +153,15 @@ static void update_mice(int screen_w, int screen_h)
 
 static void update_ball(int screen_w, int screen_h)
 {
+    static Uint32 lastupdate = 0;
+    Uint32 now = SDL_GetTicks();
 	Ball *ball = &puck;
+
+    if (now - lastupdate < 10)
+        return;
+
+    lastupdate += 10;
+
 	if(ball->y < 0) ball->dir_h = DOWN;
 	if(ball->y > screen_h - 10) ball->dir_h = UP;
 	if(ball->x < 15){
