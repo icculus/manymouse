@@ -630,7 +630,7 @@ static void windows_wminput_quit(void)
 static const char *windows_wminput_name(unsigned int index)
 {
     if (index < available_mice)
-        return mice[index].name;
+        return(mice[index].name);
     return(NULL);
 } /* windows_wminput_name */
 
