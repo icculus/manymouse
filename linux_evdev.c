@@ -286,7 +286,7 @@ static void linux_evdev_quit(void)
 static const char *linux_evdev_name(unsigned int index)
 {
     if (index < available_mice)
-        return mice[index].name;
+        return(mice[index].name);
     return(NULL);
 } /* linux_evdev_name */
 
