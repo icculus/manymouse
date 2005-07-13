@@ -30,10 +30,10 @@ clean:
 	rm -f *.o *.obj *.exe example/*.o example/*.obj test_manymouse_stdio test_manymouse_stdio detect_mice
 
 %.o : %c
-	$(CC) $(CFLAGS) -o $@ $+
+	$(CC) $(CFLAGS) -o $@ $<
 
 example/test_manymouse_sdl.o : example/test_manymouse_sdl.c
-	$(CC) $(CFLAGS) -o $@ $+ `sdl-config --cflags`
+	$(CC) $(CFLAGS) -o $@ $< `sdl-config --cflags`
 
 detect_mice: $(BASEOBJS) example/detect_mice.o
 	$(LD) $(LDFLAGS) -o $@ $+
