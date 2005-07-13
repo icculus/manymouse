@@ -49,14 +49,19 @@ static int score1 = 0 , score2=0;
 
 void score(int who)
 {
+    const char *fmt = "MMPong, an example of ManyMouse usage: Score: %d - %d";
+    size_t len = sizeof (fmt) + 64;
+    char *buf = (char *) alloca(len);
 	Ball *ball = &puck;
+
 	if(who == 1){
 		score1++;
-		SDL_WM_SetCaption("MMPong, an example of ManyMouse usage: Score: %d - %d", "MMPong");
 	} else{
 		score2++;
-		SDL_WM_SetCaption("MMPong, an example of ManyMouse usage: Score: %d - %d", "MMPong");
 	}
+
+    snprintf(buf, len, fmt, score1, score2);
+	SDL_WM_SetCaption(buf, "MMPong");
 	ball->x = 320 ;
 	ball->y = rand() % 480 ;
 	ball->speed = 1;
