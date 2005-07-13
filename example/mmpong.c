@@ -3,6 +3,8 @@
 
 Damon Ragno - with parts copied from the SDL manymouse example by Ryan Gordon
 
+version 0.0.1
+
 TODO: 
 -clean up the code, so it actually looks like something that would be an example
 -add increasing speed
@@ -21,7 +23,6 @@ TODO:
 #define RIGHT 1
 #define UP 2
 #define DOWN 3
-#define SPEED 3
 
 int available_mice = 0;
 
@@ -56,8 +57,10 @@ void score(int who)
 
 	if(who == 1){
 		score1++;
+		printf("player 1 has %d goals", score1);
 	} else{
 		score2++;
+		printf("player 2 has $d goals", score2);
 	}
 
     snprintf(buf, len, fmt, score1, score2);
