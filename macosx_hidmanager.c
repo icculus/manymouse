@@ -16,6 +16,10 @@
  *
  * The source license to HID Utilities allows this sort of blatant stealing.
  *
+ * Patches to HID Utilities have comments like "ryan added this", otherwise,
+ *  I just tried to cut down that package to the smallest set of functions
+ *  I needed.
+ *
  * Scroll down for "-- END HID UTILITIES --" to see the ManyMouse glue code.
  */
 
