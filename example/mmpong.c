@@ -276,7 +276,7 @@ int main(int argc, char *argv[])
 		SDL_Quit();
 		exit(2);
 	}
-	SDL_WM_SetCaption("MMPong, an example of ManyMouse usage", "MMPong");
+	SDL_WM_SetCaption("MMPong, an example of ManyMouse usage: Score: 0 - 0", "MMPong");
 	SDL_ShowCursor(cursor);
 	SDL_WM_GrabInput(SDL_GRAB_ON);
 	initial_setup(screen->w, screen->h);
