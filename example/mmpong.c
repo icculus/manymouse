@@ -57,10 +57,10 @@ void score(int who)
 
 	if(who == 1){
 		score1++;
-		printf("player 1 has %d goals", score1);
+		printf("player 1 has %d goals\n", score1);
 	} else{
 		score2++;
-		printf("player 2 has %d goals", score2);
+		printf("player 2 has %d goals\n", score2);
 	}
 
     snprintf(buf, len, fmt, score1, score2);
