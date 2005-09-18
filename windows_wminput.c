@@ -240,6 +240,9 @@ static int find_api_symbols(void)
 
 static void queue_event(const ManyMouseEvent *event)
 {
+    /* copy the event info. We'll process it in ManyMouse_PollEvent(). */
+    CopyMemory(&input_events[input_events_write], event, sizeof (ManyMouseEvent));
+
     input_events_write = ((input_events_write + 1) % MAX_EVENTS);
 
     /* Ring buffer full? Lose oldest event. */
@@ -248,9 +251,6 @@ static void queue_event(const ManyMouseEvent *event)
         /* !!! FIXME: we need to not lose mouse buttons here. */
         input_events_read = ((input_events_read + 1) % MAX_EVENTS);
     } /* if */
-
-    /* copy the event info. We'll process it in ManyMouse_PollEvent(). */
-    CopyMemory(&input_events[input_events_write], event, sizeof (ManyMouseEvent));
 } /* queue_event */
 
 
