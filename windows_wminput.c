@@ -677,9 +677,6 @@ static int windows_wminput_poll(ManyMouseEvent *ev)
     MSG Msg;  /* run the queue for WM_INPUT messages, etc ... */
     int found = 0;
 
-    if (check_for_disconnects(ev))
-        return(1);
-
     /* ...favor existing events in the queue... */
     pEnterCriticalSection(&mutex);
     if (input_events_read != input_events_write)  /* no events if equal. */
@@ -709,6 +706,15 @@ static int windows_wminput_poll(ManyMouseEvent *ev)
         } /* if */
         pLeaveCriticalSection(&mutex);
     } /* if */
+
+    /*
+     * Check for disconnects if queue is totally empty and Windows didn't
+     *  report anything new at this time. This ensures that we don't send a
+     *  disconnect event through ManyMouse and then later give a valid
+     *  event to the app for a device that is now missing.
+     */
+    if (!found)
+        found = check_for_disconnects(ev);
 
     return(found);
 } /* windows_wminput_poll */
