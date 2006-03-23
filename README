@@ -22,7 +22,9 @@ Basic usage:
  - Copy *.c and *.h from the base of the manymouse folder to your project.
  - Add the new files to your project's build system.
  - #include "manymouse.h" in your source code
- - Call ManyMouse_Init(); if it returns > 0, it found mice it can use.
+ - Call ManyMouse_Init() once before using anything else in the library,
+   usually at program startup time. If it returns > 0, it found mice it can
+   use.
  - Call ManyMouse_DeviceName() if you want to know the human-readable
    name of each device ("Logitech USB mouse", etc).
  - Read input from the mice with ManyMouse_PollEvent() in a loop until the
@@ -31,7 +33,8 @@ Basic usage:
    generally, a good rule is to poll for ManyMouse events at the same time
    you poll for other system GUI events...once per iteration of your
    program's main loop.
- - When you are done processing mice, call ManyMouse_Quit().
+ - When you are done processing mice, call ManyMouse_Quit() once, usually at
+   program termination.
 
 There are examples of complete usage in the "example" directory.
 
