@@ -24,7 +24,7 @@ BASEOBJS := linux_evdev.o macosx_hidmanager.o windows_wminput.o x11_xinput.o man
 
 .PHONY: clean all
 
-all: detect_mice test_manymouse_stdio test_manymouse_sdl mmpong
+all: detect_mice test_manymouse_stdio test_manymouse_sdl mmpong manymousepong
 
 clean:
 	rm -f *.o *.obj *.exe example/*.o example/*.obj test_manymouse_stdio test_manymouse_stdio detect_mice mmpong
@@ -38,6 +38,9 @@ example/test_manymouse_sdl.o : example/test_manymouse_sdl.c
 example/mmpong.o : example/mmpong.c
 	$(CC) $(CFLAGS) -o $@ $< `sdl-config --cflags`
 
+example/manymousepong.o : example/manymousepong.c
+	$(CC) $(CFLAGS) -o $@ $< `sdl-config --cflags`
+
 detect_mice: $(BASEOBJS) example/detect_mice.o
 	$(LD) $(LDFLAGS) -o $@ $+
 
@@ -48,6 +51,9 @@ test_manymouse_sdl: $(BASEOBJS) example/test_manymouse_sdl.o
 	$(LD) $(LDFLAGS) -o $@ $+ `sdl-config --libs`
 
 mmpong: $(BASEOBJS) example/mmpong.o
+	$(LD) $(LDFLAGS) -o $@ $+ `sdl-config --libs`
+
+manymousepong: $(BASEOBJS) example/manymousepong.o
 	$(LD) $(LDFLAGS) -o $@ $+ `sdl-config --libs`
 
 # end of Makefile ...
