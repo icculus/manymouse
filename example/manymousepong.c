@@ -27,6 +27,9 @@
 #include "SDL.h"
 #include "manymouse.h"
 
+#ifdef _MSC_VER
+#define inline __inline
+#endif
 
 /*
  * paddles and balls. Things. They're all basically rectangles that move.
@@ -715,16 +718,17 @@ static void updateBall(PongThing *ball, float fractionalTime)
     /* check paddle collisions. */
     for (i = 0; i < available_mice; i++)
     {
+        int px1, px2, py1, py2;
         PongThing *paddle = &paddles[i];
         if (!paddle->exists)
             continue;
 
         /* !!! FIXME: should round to nearest, not truncate! */
         /* cast to int only once. */
-        int px1 = (int) paddle->x;
-        int px2 = px1 + paddle->w;
-        int py1 = (int) paddle->y;
-        int py2 = py1 + paddle->h;
+        px1 = (int) paddle->x;
+        px2 = px1 + paddle->w;
+        py1 = (int) paddle->y;
+        py2 = py1 + paddle->h;
 
         /*
          * The trick here is to not care where the ball is currently, but
