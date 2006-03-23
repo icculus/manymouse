@@ -976,5 +976,5 @@ int main(int argc, char **argv)
     return(0);
 } /* main */
 
-/* end of sdlpong.c ... */
+/* end of manymousepong.c ... */
 
