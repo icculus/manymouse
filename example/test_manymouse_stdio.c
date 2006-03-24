@@ -16,7 +16,12 @@ int main(int argc, char **argv)
 {
     ManyMouseEvent event;
     int available_mice = ManyMouse_Init();
-    if (available_mice <= 0)
+    if (available_mice < 0)
+    {
+        printf("Error initializing ManyMouse!\n");
+        return(2);
+    }
+    else if (available_mice == 0)
     {
         printf("No mice detected!\n");
         return(1);

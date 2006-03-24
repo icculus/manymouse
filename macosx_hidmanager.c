@@ -6,6 +6,8 @@
  *  This file written by Ryan C. Gordon.
  */
 
+#include "manymouse.h"
+
 #if ( (defined(__MACH__)) && (defined(__APPLE__)) )
 
 /*
@@ -1452,8 +1454,6 @@ static unsigned long  HIDQueueDevice (pRecDevice pDevice)
 /* -- END HID UTILITIES -- */
 
 
-#include "manymouse.h"
-
 static int available_mice = 0;
 static pRecDevice *devices = NULL;
 
@@ -1534,7 +1534,7 @@ static int macosx_hidmanager_init(void)
     macosx_hidmanager_quit();  /* just in case... */
 
     if (!HIDBuildDeviceList(kHIDPage_GenericDesktop, kHIDUsage_GD_Mouse))
-        return(0);
+        return(-1);
 
     available_mice = HIDCountDevices();
     if (available_mice > 0)
@@ -1546,9 +1546,8 @@ static int macosx_hidmanager_init(void)
         devices = (pRecDevice *) malloc(sizeof (pRecDevice) * available_mice);
         if ((devices == NULL) || (dev == NULL))
         {
-            free(devices);
-            HIDReleaseDeviceList();
-            available_mice = 0;
+            macosx_hidmanager_quit();
+            return(-1);
         } /* if */
 
         for (i = 0; i < available_mice; i++)
@@ -1619,6 +1618,14 @@ static int macosx_hidmanager_poll(ManyMouseEvent *event)
     return(0);  /* no new events */
 } /* macosx_hidmanager_poll */
 
+#else
+
+static int macosx_hidmanager_init(void) { return(-1); }
+static void macosx_hidmanager_quit(void) {}
+static const char *macosx_hidmanager_name(unsigned int index) { return(0); }
+static int macosx_hidmanager_poll(ManyMouseEvent *event) { return(0); }
+
+#endif  /* MacOSX blocker */
 
 ManyMouseDriver ManyMouseDriver_hidmanager =
 {
@@ -1627,8 +1634,6 @@ ManyMouseDriver ManyMouseDriver_hidmanager =
     macosx_hidmanager_name,
     macosx_hidmanager_poll
 };
-
-#endif  /* MacOSX blocker */
 
 /* end of macosx_hidmanager.c ... */
 

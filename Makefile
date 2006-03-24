@@ -1,6 +1,5 @@
 
 macosx := false
-xinput := false
 
 CFLAGS += -O0 -Wall -g -c
 CFLAGS += -I. -I/usr/src/linux/include
@@ -13,11 +12,8 @@ LD := gcc
 
 ifeq ($(strip $(macosx)),true)
   LDFLAGS += -framework Carbon -framework IOKit
-endif
-
-ifeq ($(strip $(xinput)),true)
-  CFLAGS += -DSUPPORT_XINPUT=1
-  LDFLAGS += -L/usr/X11R6/lib -lX11 -lXi
+else
+  LDFLAGS += -ldl
 endif
 
 BASEOBJS := linux_evdev.o macosx_hidmanager.o windows_wminput.o x11_xinput.o manymouse.o

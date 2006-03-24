@@ -96,7 +96,7 @@ Some notes:
    problem.
 
  - (XInput code isn't finished yet, but in the future this note will be true.)
-   On X11 systems, we try to use the XInput extension if possible...currently
+   On Unix systems, we try to use the XInput extension if possible...currently
    most users (XFree86/x.org X server) will not find this useful, since XInput
    is either not included or not configured properly. In the short term, most
    Linux users should favor the evdev target, below. For now, the XInput
@@ -104,10 +104,12 @@ Some notes:
    those cases, the system is possibly misconfigured. XInput currently doesn't
    support hotplugging, although the x.org people are planning to extend the
    spec to support this. If you want to use the XInput target, make sure you
-   define SUPPORT_XINPUT at compile time and link against Xlib (on most Unixes,
-   that's "-L/usr/X11R6/lib -lX11 -lXi). Since this requires a big external
-   dependency, and isn't wanted on most platforms with an X server (Cygwin/X,
-   XDarwin), you have to explicitly ask for it, even on Linux/Unix/GNU.
+   link with "-ldl", since we use dlopen() to find the X11/XInput libraries.
+   You do not have to link against Xlib directly, and ManyMouse will fail
+   gracefully (reporting no mice in the ManyMouse XInput driver) if the
+   libraries don't exist on the end user's system. Naturally, you'll need
+   the X11 headers on your system. You can build with SUPPORT_XINPUT defined
+   to zero to disable XInput support.
 
  - On Linux, we first try to use the /dev/input/event* devices; this means
    that ManyMouse can function with or without an X server. Please note that

@@ -6,6 +6,8 @@
  *  This file written by Ryan C. Gordon.
  */
 
+#include "manymouse.h"
+
 #ifdef __linux__
 
 #include <stdio.h>
@@ -20,8 +22,6 @@
 #include <fcntl.h>
 
 #include <linux/input.h>  /* evdev interface...  */
-
-#include "manymouse.h"
 
 #define test_bit(array, bit)    (array[bit/8] & (1<<(bit%8)))
 
@@ -256,7 +256,7 @@ static int linux_evdev_init(void)
 
     dirp = opendir("/dev/input");
     if (!dirp)
-        return 0;
+        return -1;
 
     while ((dent = readdir(dirp)) != NULL)
     {
@@ -322,6 +322,14 @@ static int linux_evdev_poll(ManyMouseEvent *event)
     return(0);  /* no new events */
 } /* linux_evdev_poll */
 
+#else
+
+static int linux_evdev_init(void) { return(-1); }
+static void linux_evdev_quit(void) {}
+static const char *linux_evdev_name(unsigned int index) { return(0); }
+static int linux_evdev_poll(ManyMouseEvent *event) { return(0); }
+
+#endif  /* defined __linux__ */
 
 ManyMouseDriver ManyMouseDriver_evdev =
 {
@@ -330,8 +338,6 @@ ManyMouseDriver ManyMouseDriver_evdev =
     linux_evdev_name,
     linux_evdev_poll
 };
-
-#endif  /* defined __linux__ */
 
 /* end of linux_evdev.c ... */
 

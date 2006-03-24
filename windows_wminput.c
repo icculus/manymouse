@@ -6,6 +6,8 @@
  *  This file written by Ryan C. Gordon.
  */
 
+#include "manymouse.h"
+
 #if (defined(_WIN32) || defined(__CYGWIN__))
 
 /* WinUser.h won't include rawinput stuff without this... */
@@ -21,8 +23,6 @@
 #ifndef WM_INPUT
 #define WM_INPUT 0x00FF
 #endif
-
-#include "manymouse.h"
 
 /* that should be enough, knock on wood. */
 #define MAX_MICE 32
@@ -719,6 +719,14 @@ static int windows_wminput_poll(ManyMouseEvent *ev)
     return(found);
 } /* windows_wminput_poll */
 
+#else
+
+static int windows_wminput_init(void) { return(-1); }
+static void windows_wminput_quit(void) {}
+static const char *windows_wminput_name(unsigned int index) { return(0); }
+static int windows_wminput_poll(ManyMouseEvent *event) { return(0); }
+
+#endif  /* ifdef WINDOWS blocker */
 
 ManyMouseDriver ManyMouseDriver_windows =
 {
@@ -727,8 +735,6 @@ ManyMouseDriver ManyMouseDriver_windows =
     windows_wminput_name,
     windows_wminput_poll
 };
-
-#endif  /* ifdef WINDOWS blocker */
 
 /* end of windows_wminput.c ... */
 

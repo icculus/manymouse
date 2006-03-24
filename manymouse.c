@@ -15,25 +15,15 @@ static const char *manymouse_copyright =
 
 extern const ManyMouseDriver ManyMouseDriver_windows;
 extern const ManyMouseDriver ManyMouseDriver_evdev;
-extern const ManyMouseDriver ManyMouseDriver_mousedev;
 extern const ManyMouseDriver ManyMouseDriver_hidmanager;
 extern const ManyMouseDriver ManyMouseDriver_xinput;
 
 static const ManyMouseDriver *mice_drivers[] =
 {
-    #if SUPPORT_XINPUT
     &ManyMouseDriver_xinput,
-    #endif
-    #if ((defined _WIN32) || defined(__CYGWIN__))
-    &ManyMouseDriver_windows,
-    #endif
-    #ifdef __linux__
     &ManyMouseDriver_evdev,
-    /*&ManyMouseDriver_mousedev,*/
-    #endif
-    #if ( (defined(__MACH__)) && (defined(__APPLE__)) )
+    &ManyMouseDriver_windows,
     &ManyMouseDriver_hidmanager,
-    #endif
     NULL
 };
 
@@ -43,9 +33,10 @@ static const ManyMouseDriver *driver = NULL;
 int ManyMouse_Init(void)
 {
     int i;
+    int retval = -1;
 
     /* impossible test to keep manymouse_copyright linked into the binary. */
-    if ((char *) driver == (const char *) manymouse_copyright)
+    if (manymouse_copyright == NULL)
         return(-1);
 
     if (driver != NULL)
@@ -54,14 +45,18 @@ int ManyMouse_Init(void)
     for (i = 0; mice_drivers[i]; i++)
     {
         int mice = mice_drivers[i]->init();
-        if (mice >= 0)
+
+        if (mice > retval)
+            retval = mice; /* may just move from "error" to "no mice found". */
+
+        if (mice > 0)
         {
             driver = mice_drivers[i];
-            return(mice);
+            break;
         } /* if */
     } /* for */
 
-    return(-1);
+    return(retval);
 } /* ManyMouse_Init */
 
 
