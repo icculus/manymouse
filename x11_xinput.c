@@ -6,18 +6,28 @@
  *  This file written by Ryan C. Gordon.
  */
 
+#include "manymouse.h"
+
+/* Try to use this on everything but Windows and Mac OS by default... */
+#ifndef SUPPORT_XINPUT
+#if ( (defined(_WIN32) || defined(__CYGWIN__)) )
+#define SUPPORT_XINPUT 0
+#elif ( (defined(__MACH__)) && (defined(__APPLE__)) )
+#define SUPPORT_XINPUT 0
+#else
+#define SUPPORT_XINPUT 1
+#endif
+#endif
+
 #if SUPPORT_XINPUT
 
-#error this code is incomplete. Do not use unless you are fixing it.
+//#error this code is incomplete. Do not use unless you are fixing it.
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <X11/Xlib.h>
+#include <dlfcn.h>
 #include <X11/extensions/XInput.h>
-#include <X11/Xutil.h>
-
-#include "manymouse.h"
 
 /* 32 is good enough for now. */
 #define MAX_MICE 32
@@ -39,6 +49,79 @@ static XExtensionVersion *extver = NULL;
 static XDeviceInfo *device_list = NULL;
 static int device_count = 0;
 
+/*
+ * You _probably_ have Xlib on your system if you're on a Unix box where you
+ *  are planning to plug in multiple mice. That being said, we don't want
+ *  to force a project to add Xlib to their builds, or force the end-user to
+ *  have Xlib installed if they are otherwise running a console app that the
+ *  evdev driver would handle.
+ *
+ * We load all Xlib symbols at runtime, and fail gracefully if they aren't
+ *  available for some reason...ManyMouse might be able to use the evdev
+ *  driver or at least return a zero.
+ *
+ * On Linux (and probably others), you'll need to add -ldl to your link line,
+ *  but it's part of glibc, so this is pretty much going to be there.
+ */
+
+static void *libx11 = NULL;
+static void *libxext = NULL;
+static void *libxi = NULL;
+typedef int (*XExtErrHandler)(Display *, _Xconst char *, _Xconst char *);
+static XExtErrHandler (*pXSetExtensionErrorHandler)(XExtErrHandler h) = 0;
+static Display* (*pXOpenDisplay)(_Xconst char*) = 0;
+static int (*pXCloseDisplay)(Display*) = 0;
+static int (*pXFree)(void*) = 0;
+static XExtensionVersion* (*pXGetExtensionVersion)(Display*,_Xconst char*) = 0;
+static XDeviceInfo* (*pXListInputDevices)(Display*,int*) = 0;
+static void	(*pXFreeDeviceList)(XDeviceInfo*) = 0;
+static XDevice* (*pXOpenDevice)(Display*,XID) = 0;
+static int (*pXCloseDevice)(Display*,XDevice*) = 0;
+
+static int symlookup(void *dll, void **addr, const char *sym)
+{
+    *addr = dlsym(dll, sym);
+    if (*addr == NULL)
+        return(0);
+
+    return(1);
+} /* symlookup */
+
+static int find_api_symbols(void)
+{
+    void *dll = NULL;
+
+    #define LOOKUP(x) { if (!symlookup(dll, (void **) &p##x, #x)) return(0); }
+    dll = libx11 = dlopen("libX11.so.6", RTLD_GLOBAL | RTLD_LAZY);
+    if (dll == NULL)
+        return(0);
+
+    LOOKUP(XOpenDisplay);
+    LOOKUP(XCloseDisplay);
+    LOOKUP(XFree);
+
+    dll = libxext = dlopen("libXext.so.6", RTLD_GLOBAL | RTLD_LAZY);
+    if (dll == NULL)
+        return(0);
+
+    LOOKUP(XSetExtensionErrorHandler);
+
+    dll = libxi = dlopen("libXi.so.6", RTLD_GLOBAL | RTLD_LAZY);
+    if (dll == NULL)
+        return(0);
+
+    LOOKUP(XGetExtensionVersion);
+    LOOKUP(XListInputDevices);
+    LOOKUP(XFreeDeviceList);
+    LOOKUP(XOpenDevice);
+    LOOKUP(XCloseDevice);
+
+    #undef LOOKUP
+
+    return(1);
+} /* find_api_symbols */
+
+
 static void xinput_cleanup(void)
 {
     int i;
@@ -48,30 +131,36 @@ static void xinput_cleanup(void)
         for (i = 0; i < available_mice; i++)
         {
             if (mice[i].device)
-                XCloseDevice(display, mice[i].device);
+                pXCloseDevice(display, mice[i].device);
         } /* for */
     } /* if */
 
     if (extver != NULL)
     {
-        XFree(extver);
+        pXFree(extver);
         extver = NULL;
     } /* if */
 
     if (device_list != NULL)
     {
-        XFreeDeviceList(device_list);
+        pXFreeDeviceList(device_list);
         device_list = NULL;
     } /* if */
 
     if (display != NULL)
     {
-        XCloseDisplay(display);
+        pXCloseDisplay(display);
         display = NULL;
     } /* if */
 
     memset(mice, '\0', sizeof (mice));
     available_mice = 0;
+
+    #define LIBCLOSE(lib) { if (lib != NULL) { dlclose(lib); lib = NULL; } }
+    LIBCLOSE(libxi);
+    LIBCLOSE(libxext);
+    LIBCLOSE(libx11);
+    #undef LIBCLOSE
 } /* xinput_cleanup */
 
 
@@ -93,6 +182,12 @@ static int init_mouse(MouseStruct *mouse, const XDeviceInfo *devinfo)
     int has_buttons = 0;
     XAnyClassPtr any = devinfo->inputclassinfo;
 
+    if (devinfo->use == IsXPointer)
+        return(0);  /* sucks! Can't open a mouse that is the system pointer! */
+
+    if (devinfo->use == IsXKeyboard)
+        return(0);  /* definitely not a mouse. :) */
+
     for (i = 0; i < devinfo->num_classes; i++)
     {
         XID cls = get_x11_any_class(any);
@@ -110,7 +205,7 @@ static int init_mouse(MouseStruct *mouse, const XDeviceInfo *devinfo)
         else if (cls == ValuatorClass)
         {
             const XValuatorInfo *info = (const XValuatorInfo *) any;
-            if (info->num_axes != 2)  /* joystick? */
+            if (info->num_axes != 2)  /* joystick? */  /* !!! FIXME: this isn't right! */
                 return 0;
 
             has_axes = 1;
@@ -126,7 +221,7 @@ static int init_mouse(MouseStruct *mouse, const XDeviceInfo *devinfo)
     if ((!has_axes) || (!has_buttons))
         return(0);  /* probably not a mouse. */
 
-    mouse->device = XOpenDevice(display, devinfo->id);
+    mouse->device = pXOpenDevice(display, devinfo->id);
     if (mouse->device == NULL)
         return(0);
 
@@ -136,26 +231,48 @@ static int init_mouse(MouseStruct *mouse, const XDeviceInfo *devinfo)
 } /* init_mouse */
 
 
-static int x11_xinput_init(void)
+static int (*Xext_handler)(Display *, _Xconst char *, _Xconst char *) = NULL;
+static int xext_errhandler(Display *d, _Xconst char *ext, _Xconst char *reason)
+{
+    /* Don't do anything (write an error to stderr) if extension is missing */
+	if (strcmp(reason, "missing") == 0)
+		return 0;
+
+	return Xext_handler(d, ext, reason);
+}
+
+
+static int x11_xinput_init_internal(void)
 {
     int i;
 
     xinput_cleanup();  /* just in case... */
 
-    display = XOpenDisplay(NULL);
-    if (display == NULL)
-        goto x11_xinput_init_failed;  /* no X server at all */
+    if (getenv("MANYMOUSE_NO_XINPUT") != NULL)
+        return(-1);
 
-    extver = XGetExtensionVersion(display, INAME);
+    if (!find_api_symbols())
+        return(-1);  /* couldn't find all needed symbols. */
+
+    display = pXOpenDisplay(NULL);
+    if (display == NULL)
+        return(-1);  /* no X server at all */
+
+    /* Stop stderr output in case XInput extension is missing... */
+    Xext_handler = pXSetExtensionErrorHandler(xext_errhandler);
+    extver = pXGetExtensionVersion(display, INAME);
+    pXSetExtensionErrorHandler(Xext_handler);
+    Xext_handler = NULL;
+
     if ((extver == NULL) || (extver == (XExtensionVersion *) NoSuchExtension))
-        goto x11_xinput_init_failed;  /* no such extension */
+        return(-1);  /* no such extension */
 
     if (extver->present == XI_Absent)
-        goto x11_xinput_init_failed;
+        return(-1);  /* extension not available. */
 
-    device_list = XListInputDevices(display, &device_count);
+    device_list = pXListInputDevices(display, &device_count);
     if (device_list == NULL)
-        goto x11_xinput_init_failed;
+        return(-1);
 
     for (i = 0; i < device_count; i++)
     {
@@ -164,17 +281,16 @@ static int x11_xinput_init(void)
             available_mice++;
     } /* for */
 
-    /* just one? Maybe misconfigured X server where evdev could do better... */
-/*
-    if (available_mice <= 1)
-        goto x11_xinput_init_failed;
-*/
-
     return(available_mice);
+} /* x11_xinput_init_internal */
 
-x11_xinput_init_failed:
-    xinput_cleanup();
-    return(-1);
+
+static int x11_xinput_init(void)
+{
+    int retval = x11_xinput_init_internal();
+    if (retval < 0)
+        xinput_cleanup();
+    return(retval);
 } /* x11_xinput_init */
 
 
@@ -198,6 +314,16 @@ static int x11_xinput_poll(ManyMouseEvent *event)
 } /* x11_xinput_poll */
 
 
+#else
+
+static int x11_xinput_init(void) { return(-1); }
+static void x11_xinput_quit(void) {}
+static const char *x11_xinput_name(unsigned int index) { return(0); }
+static int x11_xinput_poll(ManyMouseEvent *event) { return(0); }
+
+#endif /* SUPPORT_XINPUT blocker */
+
+
 ManyMouseDriver ManyMouseDriver_xinput =
 {
     x11_xinput_init,
@@ -205,8 +331,6 @@ ManyMouseDriver ManyMouseDriver_xinput =
     x11_xinput_name,
     x11_xinput_poll
 };
-
-#endif /* SUPPORT_XINPUT blocker */
 
 /* end of x11_xinput.c ... */
 
