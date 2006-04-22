@@ -671,7 +671,6 @@ static inline int scoreOrBounce(PongThing *ball, PaddleSide side)
 static void updateBall(PongThing *ball, float fractionalTime)
 {
     /* !!! FIXME: be nice if bounces randomized direction */
-    /* !!! FIXME: be nice if bounces slightly accelerate ball. */
 
     int i;
     float xorig, yorig;
@@ -783,7 +782,7 @@ static void updateBall(PongThing *ball, float fractionalTime)
     } /* for */
 
     /* no collisions with paddles this frame? See about wall collisions... */
-    /* Multiply velocity by -1.1 so it reverses and gets faster. */
+    /* Multiply velocity by -1.0 so it reverses. */
     if (i == available_mice)
     {
         /*
@@ -835,7 +834,7 @@ static void updateBall(PongThing *ball, float fractionalTime)
 
     if (bounced)
     {
-        /* increase velocities from 0% to 5% */
+        /* increase velocities from 0% to 5% if we bounced off something. */
         ball->xvelocity *= 1.0f + ((10.0f*rand()/(RAND_MAX+1.0f)) / 200.0f);
         ball->yvelocity *= 1.0f + ((10.0f*rand()/(RAND_MAX+1.0f)) / 200.0f);
     } /* if */
