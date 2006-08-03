@@ -5,8 +5,8 @@ This is a simple library to abstract away the reading of multiple input
  devices. It is designed to work cross-platform.
 
 Just copy all of the C files and headers in this directory into your
- project and build them; unless explicitly noted, you shouldn't have to
- #define anything, and each file is wrapped in #ifdefs to avoid compiling
+ project, and build the C files. Unless explicitly noted, you shouldn't have
+ to #define anything, and each file is wrapped in #ifdefs to avoid compiling
  on the wrong platforms, so it is safe to build everything without close
  examination.
 
@@ -52,6 +52,20 @@ cl /I. *.c example\detect_mice.c /Fedetect_mice.exe
 (yes, that's simple, that's the point)...getting the SDL test app to work
  on Windows can be done, but takes too much effort unrelated to ManyMouse
  itself for this document to explain.
+
+
+Java bindings:
+ There are now Java bindings available in the contrib/java directory.
+  They should work on any platform that ManyMouse supports that has a Java
+  virtual machine. If you're using the makefile, you can run "make java" and
+  it will produce the native code glue library and class files that you can
+  include in your application. Please see contrib/java/TestManyMouse.java
+  for an example of how to use ManyMouse from your Java application. Most
+  of this documentation talks about the C interface to ManyMouse, but with
+  minor modifications also applies to the Java bindings. We welcome patches
+  and bug reports on the Java bindings, but don't officially support them.
+
+  Thanks to Brian Ballsun-Stanton for kicking this into gear.
 
 
 Some notes:
@@ -120,12 +134,12 @@ Some notes:
 
  - On MacOS X, we use IOKit's HID Manager API, which means you can use this
    C-callable library from Cocoa, Carbon, and generic Unix applications, with
-   or without a GUI. We'll accept contributed Java bindings, but have no plans
-   to implement those ourselves. This code may or may not work on Darwin
-   (we're not sure if IOKit is available to that platform); reports of
-   success are welcome. If you aren't already, you will need to make sure you
-   link against the "Carbon" and "IOKit" frameworks once you add ManyMouse to
-   your project.
+   or without a GUI. There are Java bindings available, too, letting you use
+   ManyMouse from any of the official Mac application layers. This code may or
+   may not work on Darwin (we're not sure if IOKit is available to that
+   platform); reports of success are welcome. If you aren't already, you will
+   need to make sure you link against the "Carbon" and "IOKit" frameworks once
+   you add ManyMouse to your project.
 
  - Support for other platforms than MacOS X, Linux, and Windows is not planned,
    but contributions of implementations for other platforms are welcome.
