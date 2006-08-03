@@ -1481,25 +1481,35 @@ static int poll_mouse(pRecDevice mouse, ManyMouseEvent *outevent)
         if (recelem == NULL)
             continue;  /* unknown device element. Can this actually happen? */
 
-
         outevent->value = event.value;
         if (recelem->usagePage == kHIDPage_GenericDesktop)
         {
-            /* !!! FIXME: absolute motion? */
-            outevent->type = MANYMOUSE_EVENT_RELMOTION;  /* assume this. */
-            if (recelem->usage == kHIDUsage_GD_X)
-                outevent->item = 0;
-            else if (recelem->usage == kHIDUsage_GD_Y)
-                outevent->item = 1;
-            else if (recelem->usage == kHIDUsage_GD_Wheel)
-            {
-                /* !!! FIXME: find horizontal scroll? */
-                outevent->type = MANYMOUSE_EVENT_SCROLL;
-                outevent->item = 0;
-            } /* else if */
+            /*
+             * some devices (two-finger-scroll trackpads?) seem to give
+             *  values of zero where we want non-events. Throw these out.
+             */
+            if (outevent->value == 0)
+                unhandled = 1;
             else
             {
-                unhandled = 1;
+                /* !!! FIXME: absolute motion? */
+                switch (recelem->usage)
+                {
+                    case kHIDUsage_GD_X:
+                        outevent->type = MANYMOUSE_EVENT_RELMOTION;
+                        outevent->item = 0;
+                        break;
+                    case kHIDUsage_GD_Y:
+                        outevent->type = MANYMOUSE_EVENT_RELMOTION;
+                        outevent->item = 1;
+                        break;
+                    case kHIDUsage_GD_Wheel:
+                        outevent->type = MANYMOUSE_EVENT_SCROLL;
+                        outevent->item = 0;  /* !!! FIXME: horiz scroll? */
+                        break;
+                    default:
+                        unhandled = 1;
+                } /* switch */
             } /* else */
         } /* if */
 
