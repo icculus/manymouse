@@ -38,7 +38,7 @@ Basic usage:
 
 There are examples of complete usage in the "example" directory.
 
-The test apps on Linux and MacOS X can be built by running "make" from a
+The test apps on Linux and Mac OS X can be built by running "make" from a
  terminal. The SDL test app will fail if Simple Directmedia Layer
  (http://libsdl.org/) isn't installed. The stdio apps will still work.
 
@@ -132,7 +132,7 @@ Some notes:
    XInput implementation will implement hotplugging and such, making it the
    favorable ManyMouse target for most Linux users.
 
- - On MacOS X, we use IOKit's HID Manager API, which means you can use this
+ - On Mac OS X, we use IOKit's HID Manager API, which means you can use this
    C-callable library from Cocoa, Carbon, and generic Unix applications, with
    or without a GUI. There are Java bindings available, too, letting you use
    ManyMouse from any of the official Mac application layers. This code may or
@@ -141,8 +141,9 @@ Some notes:
    need to make sure you link against the "Carbon" and "IOKit" frameworks once
    you add ManyMouse to your project.
 
- - Support for other platforms than MacOS X, Linux, and Windows is not planned,
-   but contributions of implementations for other platforms are welcome.
+ - Support for other platforms than Mac OS X, Linux, and Windows is not
+   planned, but contributions of implementations for other platforms are
+   welcome.
 
 Please see the file LICENSE in the source's root directory.
 
