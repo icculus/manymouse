@@ -11,20 +11,19 @@
 #include "manymouse.h"
 
 static const char *manymouse_copyright =
-    "ManyMouse " MANYMOUSE_VERSION " (c) 2005 Ryan C. Gordon.";
+    "ManyMouse " MANYMOUSE_VERSION " copyright (c) 2005-2007 Ryan C. Gordon.";
 
-extern const ManyMouseDriver ManyMouseDriver_windows;
-extern const ManyMouseDriver ManyMouseDriver_evdev;
-extern const ManyMouseDriver ManyMouseDriver_hidmanager;
-extern const ManyMouseDriver ManyMouseDriver_xinput;
+extern const ManyMouseDriver *ManyMouseDriver_windows;
+extern const ManyMouseDriver *ManyMouseDriver_evdev;
+extern const ManyMouseDriver *ManyMouseDriver_hidmanager;
+extern const ManyMouseDriver *ManyMouseDriver_xinput;
 
-static const ManyMouseDriver *mice_drivers[] =
+static const ManyMouseDriver **mice_drivers[] =
 {
     &ManyMouseDriver_xinput,
     &ManyMouseDriver_evdev,
     &ManyMouseDriver_windows,
     &ManyMouseDriver_hidmanager,
-    NULL
 };
 
 
@@ -32,6 +31,7 @@ static const ManyMouseDriver *driver = NULL;
 
 int ManyMouse_Init(void)
 {
+    const int upper = (sizeof (mice_drivers) / sizeof (mice_drivers[0]));
     int i;
     int retval = -1;
 
@@ -42,17 +42,17 @@ int ManyMouse_Init(void)
     if (driver != NULL)
         return(-1);
 
-    for (i = 0; mice_drivers[i]; i++)
+    for (i = 0; (i < upper) && (driver == NULL); i++)
     {
-        int mice = mice_drivers[i]->init();
-
-        if (mice > retval)
-            retval = mice; /* may just move from "error" to "no mice found". */
-
-        if (mice > 0)
+        const ManyMouseDriver *this_driver = *(mice_drivers[i]);
+        if (this_driver != NULL) /* if not built for this platform, skip it. */
         {
-            driver = mice_drivers[i];
-            break;
+            const int mice = this_driver->init();
+            if (mice > retval)
+                retval = mice; /* may move from "error" to "no mice found". */
+
+            if (mice > 0)
+                driver = this_driver;
         } /* if */
     } /* for */
 

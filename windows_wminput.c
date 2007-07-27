@@ -719,22 +719,19 @@ static int windows_wminput_poll(ManyMouseEvent *ev)
     return(found);
 } /* windows_wminput_poll */
 
-#else
-
-static int windows_wminput_init(void) { return(-1); }
-static void windows_wminput_quit(void) {}
-static const char *windows_wminput_name(unsigned int index) { return(0); }
-static int windows_wminput_poll(ManyMouseEvent *event) { return(0); }
-
-#endif  /* ifdef WINDOWS blocker */
-
-ManyMouseDriver ManyMouseDriver_windows =
+static const ManyMouseDriver ManyMouseDriver_interface =
 {
     windows_wminput_init,
     windows_wminput_quit,
     windows_wminput_name,
     windows_wminput_poll
 };
+
+const ManyMouseDriver *ManyMouseDriver_windows = &ManyMouseDriver_interface;
+
+#else
+const ManyMouseDriver *ManyMouseDriver_windows = 0;
+#endif  /* ifdef Windows blocker */
 
 /* end of windows_wminput.c ... */
 

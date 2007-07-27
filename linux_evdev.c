@@ -322,22 +322,19 @@ static int linux_evdev_poll(ManyMouseEvent *event)
     return(0);  /* no new events */
 } /* linux_evdev_poll */
 
-#else
-
-static int linux_evdev_init(void) { return(-1); }
-static void linux_evdev_quit(void) {}
-static const char *linux_evdev_name(unsigned int index) { return(0); }
-static int linux_evdev_poll(ManyMouseEvent *event) { return(0); }
-
-#endif  /* defined __linux__ */
-
-ManyMouseDriver ManyMouseDriver_evdev =
+static const ManyMouseDriver ManyMouseDriver_interface =
 {
     linux_evdev_init,
     linux_evdev_quit,
     linux_evdev_name,
     linux_evdev_poll
 };
+
+const ManyMouseDriver *ManyMouseDriver_evdev = &ManyMouseDriver_interface;
+
+#else
+const ManyMouseDriver *ManyMouseDriver_evdev = 0;
+#endif  /* ifdef Linux blocker */
 
 /* end of linux_evdev.c ... */
 

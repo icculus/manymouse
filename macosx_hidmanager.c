@@ -1649,22 +1649,19 @@ static int macosx_hidmanager_poll(ManyMouseEvent *event)
     return(0);  /* no new events */
 } /* macosx_hidmanager_poll */
 
-#else
-
-static int macosx_hidmanager_init(void) { return(-1); }
-static void macosx_hidmanager_quit(void) {}
-static const char *macosx_hidmanager_name(unsigned int index) { return(0); }
-static int macosx_hidmanager_poll(ManyMouseEvent *event) { return(0); }
-
-#endif  /* MacOSX blocker */
-
-ManyMouseDriver ManyMouseDriver_hidmanager =
+static const ManyMouseDriver ManyMouseDriver_interface =
 {
     macosx_hidmanager_init,
     macosx_hidmanager_quit,
     macosx_hidmanager_name,
     macosx_hidmanager_poll
 };
+
+const ManyMouseDriver *ManyMouseDriver_hidmanager = &ManyMouseDriver_interface;
+
+#else
+const ManyMouseDriver *ManyMouseDriver_hidmanager = 0;
+#endif  /* ifdef Mac OS X blocker */
 
 /* end of macosx_hidmanager.c ... */
 

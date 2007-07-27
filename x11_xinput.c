@@ -313,24 +313,19 @@ static int x11_xinput_poll(ManyMouseEvent *event)
     return(0);  /* !!! FIXME */
 } /* x11_xinput_poll */
 
-
-#else
-
-static int x11_xinput_init(void) { return(-1); }
-static void x11_xinput_quit(void) {}
-static const char *x11_xinput_name(unsigned int index) { return(0); }
-static int x11_xinput_poll(ManyMouseEvent *event) { return(0); }
-
-#endif /* SUPPORT_XINPUT blocker */
-
-
-ManyMouseDriver ManyMouseDriver_xinput =
+static const ManyMouseDriver ManyMouseDriver_interface =
 {
     x11_xinput_init,
     x11_xinput_quit,
     x11_xinput_name,
     x11_xinput_poll
 };
+
+const ManyMouseDriver *ManyMouseDriver_xinput = &ManyMouseDriver_interface;
+
+#else
+const ManyMouseDriver *ManyMouseDriver_xinput = 0;
+#endif /* SUPPORT_XINPUT blocker */
 
 /* end of x11_xinput.c ... */
 
