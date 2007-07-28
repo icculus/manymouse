@@ -65,12 +65,15 @@ Java bindings:
   minor modifications also applies to the Java bindings. We welcome patches
   and bug reports on the Java bindings, but don't officially support them.
 
-  Thanks to Brian Ballsun-Stanton for kicking this into gear.
+ Mac OS X, Linux and Cygwin can run "make java" to build the bindings and run
+  "java TestManyMouse" to make sure they worked. Cygwin users may need to
+  adjust the WINDOWS_JDK_PATH line at the top of the Makefile to match their
+  JDK installation. Linux users should do the same with LINUX_JDK_PATH and
+  make sure that the resulting libManyMouse.so file is in their dynamic loader
+  path (LD_LIBRARY_PATH or whatnot) so that the Java VM can find it.
 
-  Mac OS X, Linux and Cygwin can run "make java" to build the bindings and run
-  "java TestManyMouse" to make sure they worked. Cygwin and Linux users may
-  need to adjust the WINDOWS_JDK_PATH (or LINUX_JDK_PATH) line at the top of
-  the Makefile to match their JDK installation.
+ Thanks to Brian Ballsun-Stanton for kicking this into gear. Jeremy Brown
+  gave me the rundown on getting this to work with Cygwin.
 
 
 Some general ManyMouse usage notes:
