@@ -67,8 +67,13 @@ Java bindings:
 
   Thanks to Brian Ballsun-Stanton for kicking this into gear.
 
+  Mac OS X and Cygwin can run "make java" to build the bindings and run
+  "java TestManyMouse" to make sure they worked. Cygwin users may need to
+  adjust the WINDOWS_JDK_PATH line at the top of the Makefile to match their
+  JDK installation.
 
-Some notes:
+
+Some general ManyMouse usage notes:
  - If a mouse is disconnected, it will not return future events, even if you
    plug it right back in. You will be alerted of disconnects programmatically
    through the MANYMOUSE_EVENT_DISCONNECT event, which will be the last
