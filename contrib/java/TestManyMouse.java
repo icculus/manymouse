@@ -1,3 +1,11 @@
+/*
+ * Test app to demonstrate usage of the Java bindings.
+ *
+ * Please see the file LICENSE in the source's root directory.
+ *
+ *  This file written by Ryan C. Gordon.
+ */
+
 public class TestManyMouse
 {
     public static void main(String args[])
