@@ -1,5 +1,6 @@
 # Set this variable if you need to.
 WINDOWS_JDK_PATH := C:\\Program\ Files\\Java\\jdk1.6.0_02\\
+LINUX_JDK_PATH := /usr/lib/j2se/1.4/
 
 linux := false
 macosx := false
@@ -27,24 +28,33 @@ CC := gcc
 LD := gcc
 
 ifeq ($(strip $(macosx)),true)
+  CFLAGS += -fPIC -framework Carbon -framework IOKit
   LDFLAGS += -framework Carbon -framework IOKit
+  JAVAC := javac
   MANYMOUSEJNILIB := libManyMouse.jnilib
-else
-  LDFLAGS += -ldl
+  #JNICFLAGS += -I/System/Library/Frameworks/JavaVM.framework/Headers
+  JNICFLAGS += -framework JavaVM
+  JNILDFLAGS += -bundle -framework JavaVM
 endif
 
-JAVAC := javac
-
 ifeq ($(strip $(linux)),true)
-  CFLAGS += -I/usr/src/linux/include
+  CFLAGS += -fPIC -I/usr/src/linux/include
+  LDFLAGS += -ldl
+  JDKPATH := $(LINUX_JDK_PATH)
+  JAVAC := $(JDKPATH)bin/javac
+  MANYMOUSEJNILIB := libManyMouse.so
+  JNICFLAGS += -I$(JDKPATH)include -I$(JDKPATH)include/linux
+  JNILDFLAGS += -shared -Wl,-soname,$(MANYMOUSEJNILIB)
 endif
 
 ifeq ($(strip $(cygwin)),true)
   CFLAGS += -mno-cygwin
   LDFLAGS += -mno-cygwin
-  MANYMOUSEJNILIB := ManyMouse.dll
   JDKPATH := $(WINDOWS_JDK_PATH)
   JAVAC := $(JDKPATH)bin\\javac
+  MANYMOUSEJNILIB := ManyMouse.dll
+  JNICFLAGS += -I$(JDKPATH)include -I$(JDKPATH)include\\win32
+  JNILDFLAGS += -Wl,--add-stdcall-alias -shared
 endif
 
 
@@ -56,7 +66,7 @@ BASEOBJS := linux_evdev.o macosx_hidmanager.o windows_wminput.o x11_xinput.o man
 all: detect_mice test_manymouse_stdio test_manymouse_sdl mmpong manymousepong
 
 clean:
-	rm -rf *.o *.obj *.exe *.class *.jnilib example/*.o example/*.obj test_manymouse_stdio test_manymouse_stdio detect_mice mmpong manymousepong
+	rm -rf *.o *.obj *.exe *.class $(MANYMOUSEJNILIB) example/*.o example/*.obj test_manymouse_stdio test_manymouse_sdl detect_mice mmpong manymousepong
 
 %.o : %c
 	$(CC) $(CFLAGS) -o $@ $<
@@ -100,28 +110,12 @@ ManyMouseEvent.class: contrib/java/ManyMouseEvent.java ManyMouse.class
 TestManyMouse.class: contrib/java/TestManyMouse.java ManyMouse.class ManyMouseEvent.class
 	$(JAVAC) -d . $<
 
-
-ifeq ($(strip $(macosx)),true)
 ManyMouseJava.o: contrib/java/ManyMouseJava.c
-	$(CC) $(CFLAGS) -o $@ $< -I/System/Library/Frameworks/JavaVM.framework/Headers
+	$(CC) $(CFLAGS) -o $@ $< $(JNICFLAGS)
 
 $(MANYMOUSEJNILIB): $(BASEOBJS) ManyMouseJava.o
 	@mkdir -p $(dir $@)
-	$(LD) $(LDFLAGS) -o $@ $^ -bundle -framework JavaVM 
-
-endif
-
-
-ifeq ($(strip $(cygwin)),true)
-ManyMouseJava.o: contrib/java/ManyMouseJava.c
-	$(CC) $(CFLAGS) -o $@ $< -I$(JDKPATH)include -I$(JDKPATH)include\\win32
-
-$(MANYMOUSEJNILIB): $(BASEOBJS) ManyMouseJava.o
-	@mkdir -p $(dir $@)
-	$(LD) $(LDFLAGS) -o $@ $^ -Wl,--add-stdcall-alias -shared
-
-endif
-
+	$(LD) $(LDFLAGS) -o $@ $^ $(JNILDFLAGS)
 
 # end of Makefile ...
 
