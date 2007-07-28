@@ -7,9 +7,10 @@ macosx := false
 cygwin := false
 
 uname_s := $(shell uname -s)
-uname_o := $(shell uname -o)
 ifeq ($(strip $(uname_s)),Darwin)
   macosx := true
+else
+  uname_o := $(shell uname -o)
 endif
 ifeq ($(strip $(uname_s)),Linux)
   linux := true
@@ -28,12 +29,10 @@ CC := gcc
 LD := gcc
 
 ifeq ($(strip $(macosx)),true)
-  CFLAGS += -fPIC -framework Carbon -framework IOKit
   LDFLAGS += -framework Carbon -framework IOKit
   JAVAC := javac
   MANYMOUSEJNILIB := libManyMouse.jnilib
-  #JNICFLAGS += -I/System/Library/Frameworks/JavaVM.framework/Headers
-  JNICFLAGS += -framework JavaVM
+  JNICFLAGS += -I/System/Library/Frameworks/JavaVM.framework/Headers
   JNILDFLAGS += -bundle -framework JavaVM
 endif
 
