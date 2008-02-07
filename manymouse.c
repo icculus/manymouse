@@ -15,7 +15,7 @@ static const char *manymouse_copyright =
 
 extern const ManyMouseDriver *ManyMouseDriver_windows;
 extern const ManyMouseDriver *ManyMouseDriver_evdev;
-extern const ManyMouseDriver *ManyMouseDriver_hidmanager;
+extern const ManyMouseDriver *ManyMouseDriver_hidutilities;
 extern const ManyMouseDriver *ManyMouseDriver_xinput;
 
 static const ManyMouseDriver **mice_drivers[] =
@@ -23,7 +23,7 @@ static const ManyMouseDriver **mice_drivers[] =
     &ManyMouseDriver_xinput,
     &ManyMouseDriver_evdev,
     &ManyMouseDriver_windows,
-    &ManyMouseDriver_hidmanager,
+    &ManyMouseDriver_hidutilities,
 };
 
 

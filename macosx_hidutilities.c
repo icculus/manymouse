@@ -1,5 +1,7 @@
 /*
- * Support for MacOS X via the HID Manager APIs.
+ * Support for Mac OS X via the HID Utilities example code. HID Utilities
+ *  talks to very low-level parts of the HID Manager API, which are deprecated
+ *  in OS X 10.5. Please see macosx_hidmanager.c for the 10.5 implementation.
  *
  * Please see the file LICENSE in the source's root directory.
  *
@@ -1550,19 +1552,19 @@ static int poll_mouse(pRecDevice mouse, ManyMouseEvent *outevent)
 } /* poll_mouse */
 
 
-static void macosx_hidmanager_quit(void)
+static void macosx_hidutilities_quit(void)
 {
     HIDReleaseAllDeviceQueues();
     HIDReleaseDeviceList();
     free(devices);
     devices = NULL;
     available_mice = 0;
-} /* macosx_hidmanager_quit */
+} /* macosx_hidutilities_quit */
 
 
-static int macosx_hidmanager_init(void)
+static int macosx_hidutilities_init(void)
 {
-    macosx_hidmanager_quit();  /* just in case... */
+    macosx_hidutilities_quit();  /* just in case... */
 
     if (!HIDBuildDeviceList(kHIDPage_GenericDesktop, kHIDUsage_GD_Mouse))
         return(-1);
@@ -1577,7 +1579,7 @@ static int macosx_hidmanager_init(void)
         devices = (pRecDevice *) malloc(sizeof (pRecDevice) * available_mice);
         if ((devices == NULL) || (dev == NULL))
         {
-            macosx_hidmanager_quit();
+            macosx_hidutilities_quit();
             return(-1);
         } /* if */
 
@@ -1599,19 +1601,19 @@ static int macosx_hidmanager_init(void)
     } /* if */
 
     return(available_mice);
-} /* macosx_hidmanager_init */
+} /* macosx_hidutilities_init */
 
 
-static const char *macosx_hidmanager_name(unsigned int index)
+static const char *macosx_hidutilities_name(unsigned int index)
 {
     if (index >= available_mice)
         return(NULL);
 
     return((const char *) devices[index]->product);
-} /* macosx_hidmanager_name */
+} /* macosx_hidutilities_name */
 
 
-static int macosx_hidmanager_poll(ManyMouseEvent *event)
+static int macosx_hidutilities_poll(ManyMouseEvent *event)
 {
     /*
      * (i) is static so we iterate through all mice round-robin. This
@@ -1647,21 +1649,21 @@ static int macosx_hidmanager_poll(ManyMouseEvent *event)
     } /* if */
 
     return(0);  /* no new events */
-} /* macosx_hidmanager_poll */
+} /* macosx_hidutilities_poll */
 
 static const ManyMouseDriver ManyMouseDriver_interface =
 {
-    macosx_hidmanager_init,
-    macosx_hidmanager_quit,
-    macosx_hidmanager_name,
-    macosx_hidmanager_poll
+    macosx_hidutilities_init,
+    macosx_hidutilities_quit,
+    macosx_hidutilities_name,
+    macosx_hidutilities_poll
 };
 
-const ManyMouseDriver *ManyMouseDriver_hidmanager = &ManyMouseDriver_interface;
+const ManyMouseDriver *ManyMouseDriver_hidutilities = &ManyMouseDriver_interface;
 
 #else
-const ManyMouseDriver *ManyMouseDriver_hidmanager = 0;
+const ManyMouseDriver *ManyMouseDriver_hidutilities = 0;
 #endif  /* ifdef Mac OS X blocker */
 
-/* end of macosx_hidmanager.c ... */
+/* end of macosx_hidutilities.c ... */
 

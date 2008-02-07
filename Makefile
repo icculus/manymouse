@@ -58,7 +58,7 @@ endif
 
 
 
-BASEOBJS := linux_evdev.o macosx_hidmanager.o windows_wminput.o x11_xinput.o manymouse.o
+BASEOBJS := linux_evdev.o macosx_hidutilities.o windows_wminput.o x11_xinput.o manymouse.o
 
 .PHONY: clean all
 
