@@ -38,6 +38,15 @@ Basic usage:
 
 There are examples of complete usage in the "example" directory.
 
+
+Thread safety note:
+Pick a thread to call into ManyMouse from, and don't call into it from any
+ other. We make no promises on any platform of thread safety. For safety's
+ sake, you might want to use the same thread that talks to the system's
+ GUI interfaces and/or the main thread, if you have one.
+
+
+Building the code:
 The test apps on Linux and Mac OS X can be built by running "make" from a
  terminal. The SDL test app will fail if Simple Directmedia Layer
  (http://libsdl.org/) isn't installed. The stdio apps will still work.

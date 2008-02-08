@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#define MANYMOUSE_VERSION "0.0.1"
+#define MANYMOUSE_VERSION "0.0.2"
 
 typedef enum
 {
