@@ -110,7 +110,6 @@ static void input_callback(void *ctx, IOReturn res,
         ManyMouseEvent ev;
         IOHIDElementRef elem = IOHIDValueGetElement(val);
         const CFIndex value = IOHIDValueGetIntegerValue(val);
-        /*const uint64_t timestamp = IOHIDValueGetTimeStamp(val);*/
         const uint32_t page = IOHIDElementGetUsagePage(elem);
         const uint32_t usage = IOHIDElementGetUsage(elem);
 
