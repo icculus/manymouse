@@ -115,6 +115,7 @@ static void input_callback(void *ctx, IOReturn res,
 
         memset(&ev, '\0', sizeof (ev));
         ev.value = (int) value;
+        ev.device = idx;
 
         if (page == kHIDPage_GenericDesktop)
         {
