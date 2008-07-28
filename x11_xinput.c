@@ -1,7 +1,7 @@
 /*
  * Support for the X11 XInput extension.
  *
- * Please see the file LICENSE in the source's root directory.
+ * Please see the file LICENSE.txt in the source's root directory.
  *
  *  This file written by Ryan C. Gordon.
  */

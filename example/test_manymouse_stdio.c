@@ -1,7 +1,7 @@
 /*
  * A test file for ManyMouse that dumps input data to stdout.
  *
- * Please see the file LICENSE in the source's root directory.
+ * Please see the file LICENSE.txt in the source's root directory.
  *
  *  This file written by Ryan C. Gordon.
  */
