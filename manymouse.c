@@ -31,7 +31,10 @@ extern const ManyMouseDriver *ManyMouseDriver_xinput;
  */
 static const ManyMouseDriver **mice_drivers[] =
 {
+    #if 0  /* FIXME: re-add this when the code is written! */
     &ManyMouseDriver_xinput,
+    #endif
+
     &ManyMouseDriver_evdev,
     &ManyMouseDriver_windows,
     &ManyMouseDriver_hidmanager,
