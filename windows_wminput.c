@@ -63,116 +63,29 @@ static MouseStruct mice[MAX_MICE];
  *  import libraries, I've added those here, too. That fits well with the
  *  idea of just adding the sources to your build and going forward.
  */
-static UINT (WINAPI *pGetRawInputDeviceList)(
-    PRAWINPUTDEVICELIST pRawInputDeviceList,
-    PUINT puiNumDevices,
-    UINT cbSize
-);
+static UINT (WINAPI *pGetRawInputDeviceList)(PRAWINPUTDEVICELIST,PUINT,UINT);
 /* !!! FIXME: use unicode version */
-static UINT (WINAPI *pGetRawInputDeviceInfoA)(
-    HANDLE hDevice,
-    UINT uiCommand,
-    LPVOID pData,
-    PUINT pcbSize
-);
-static BOOL (WINAPI *pRegisterRawInputDevices)(
-    PCRAWINPUTDEVICE pRawInputDevices,
-    UINT uiNumDevices,
-    UINT cbSize
-);
-static LRESULT (WINAPI *pDefRawInputProc)(
-    PRAWINPUT *paRawInput,
-    INT nInput,
-    UINT cbSizeHeader
-);
-static UINT (WINAPI *pGetRawInputBuffer)(
-    PRAWINPUT pData,
-    PUINT pcbSize,
-    UINT cbSizeHeader
-);
-static UINT (WINAPI *pGetRawInputData)(
-    HRAWINPUT hRawInput,
-    UINT uiCommand,
-    LPVOID pData,
-    PUINT pcbSize,
-    UINT cbSizeHeader
-);
-static LONG (WINAPI *pRegQueryValueExA)(
-    HKEY hKey,
-    LPCTSTR lpValueName,
-    LPDWORD lpReserved,
-    LPDWORD lpType,
-    LPBYTE lpData,
-    LPDWORD lpcbData
-);
-static LONG (WINAPI *pRegOpenKeyExA)(
-    HKEY hKey,
-    LPCTSTR lpSubKey,
-    DWORD ulOptions,
-    REGSAM samDesired,
-    PHKEY phkResult
-);
-static LONG (WINAPI *pRegCloseKey)(
-    HKEY hKey
-);
-static HWND (WINAPI *pCreateWindowExA)(
-    DWORD dwExStyle,
-    LPCTSTR lpClassName,
-    LPCTSTR lpWindowName,
-    DWORD dwStyle,
-    int x,
-    int y,
-    int nWidth,
-    int nHeight,
-    HWND hWndParent,
-    HMENU hMenu,
-    HINSTANCE hInstance,
-    LPVOID lpParam
-);
-static ATOM (WINAPI *pRegisterClassExA)(
-    CONST WNDCLASSEX *lpwcx
-);
-static LRESULT (WINAPI *pDefWindowProcA)(
-    HWND hWnd,
-    UINT Msg,
-    WPARAM wParam,
-    LPARAM lParam
-);
-static BOOL (WINAPI *pUnregisterClassA)(
-    LPCTSTR lpClassName,
-    HINSTANCE hInstance
-);
-static HMODULE (WINAPI *pGetModuleHandleA)(
-    LPCTSTR lpModuleName
-);
-static BOOL (WINAPI *pPeekMessageA)(
-    LPMSG lpMsg,
-    HWND hWnd,
-    UINT wMsgFilterMin,
-    UINT wMsgFilterMax,
-    UINT wRemoveMsg
-);
-static BOOL (WINAPI *pTranslateMessage)(
-    const MSG *lpMsg
-);
-static LRESULT (WINAPI *pDispatchMessageA)(
-    const MSG *lpmsg
-);
-static BOOL (WINAPI *pDestroyWindow)(
-    HWND hWnd
-);
-static void (WINAPI *pInitializeCriticalSection)(
-  LPCRITICAL_SECTION lpCriticalSection
-);
-static void (WINAPI *pEnterCriticalSection)(
-  LPCRITICAL_SECTION lpCriticalSection
-);
-static void (WINAPI *pLeaveCriticalSection)(
-  LPCRITICAL_SECTION lpCriticalSection
-);
-static void (WINAPI *pDeleteCriticalSection)(
-  LPCRITICAL_SECTION lpCriticalSection
-);
+static UINT (WINAPI *pGetRawInputDeviceInfoA)(HANDLE,UINT,LPVOID,PUINT);
+static BOOL (WINAPI *pRegisterRawInputDevices)(PCRAWINPUTDEVICE,UINT,UINT);
+static LRESULT (WINAPI *pDefRawInputProc)(PRAWINPUT *,INT,UINT);
+static UINT (WINAPI *pGetRawInputBuffer)(PRAWINPUT,PUINT,UINT);
+static UINT (WINAPI *pGetRawInputData)(HRAWINPUT,UINT,LPVOID,PUINT,UINT);
+static LONG (WINAPI *pRegQueryValueExA)(HKEY,LPCTSTR,LPDWORD,LPDWORD,LPBYTE,LPDWORD);
+static LONG (WINAPI *pRegOpenKeyExA)(HKEY,LPCTSTR,DWORD,REGSAM,PHKEY);
+static LONG (WINAPI *pRegCloseKey)(HKEY);
+static HWND (WINAPI *pCreateWindowExA)(DWORD,LPCTSTR,LPCTSTR,DWORD,int,int,int,int,HWND,HMENU,HINSTANCE,LPVOID);
+static ATOM (WINAPI *pRegisterClassExA)(CONST WNDCLASSEX *);
+static LRESULT (WINAPI *pDefWindowProcA)(HWND,UINT,WPARAM,LPARAM);
+static BOOL (WINAPI *pUnregisterClassA)(LPCTSTR,HINSTANCE);
+static HMODULE (WINAPI *pGetModuleHandleA)(LPCTSTR);
+static BOOL (WINAPI *pPeekMessageA)(LPMSG,HWND,UINT,UINT,UINT);
+static BOOL (WINAPI *pTranslateMessage)(const MSG *);
+static LRESULT (WINAPI *pDispatchMessageA)(const MSG *);
+static BOOL (WINAPI *pDestroyWindow)(HWND);
+static void (WINAPI *pInitializeCriticalSection)(LPCRITICAL_SECTION);
+static void (WINAPI *pEnterCriticalSection)(LPCRITICAL_SECTION);
+static void (WINAPI *pLeaveCriticalSection)(LPCRITICAL_SECTION);
+static void (WINAPI *pDeleteCriticalSection)(LPCRITICAL_SECTION);
 
 static int symlookup(HMODULE dll, void **addr, const char *sym)
 {
