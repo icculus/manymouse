@@ -365,7 +365,7 @@ static void cleanup_window(void)
 
 static int accept_device(const RAWINPUTDEVICELIST *dev)
 {
-    const char rdp_ident[] = "\\??\\Root#RDP_MOU#0000#";
+    const char rdp_ident[] = "Root#RDP_MOU#0000#";
     char *buf = NULL;
     UINT ct = 0;
 
@@ -382,6 +382,10 @@ static int accept_device(const RAWINPUTDEVICELIST *dev)
 
     if (pGetRawInputDeviceInfoA(dev->hDevice, RIDI_DEVICENAME, buf, &ct) < 0)
         return(0);
+
+    /* XP starts these strings with "\\??\\" ... Vista does "\\\\?\\".  :/ */
+    buf += 4;  /* skip those chars. */
+    ct -= 4;
 
     /*
      * Apparently there's a fake "RDP" device...I guess this is
@@ -453,7 +457,7 @@ static void get_device_product_name(char *name, size_t namesize,
      *  appears to be sound.)
      */
     ct -= 4;
-    buf += 4;  /* skip the "\\??\\" on the front of the string. */
+    buf += 4;  /* skip the "\\??\\" (or "\\\\?\\") at front of the string. */
     for (i = 0, ptr = buf; i < ct; i++, ptr++)  /* convert '#' to '\\' ... */
     {
         if (*ptr == '#')
