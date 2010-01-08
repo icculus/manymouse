@@ -8,7 +8,7 @@
 
 #include "manymouse.h"
 
-#if (defined(_WIN32) || defined(__CYGWIN__))
+#if (defined(_WIN32) || defined(_WINDOWS) || defined(__CYGWIN__))
 
 /* WinUser.h won't include rawinput stuff without this... */
 #if (_WIN32_WINNT < 0x0501)
