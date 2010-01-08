@@ -442,6 +442,9 @@ static void get_device_product_name(char *name, size_t namesize,
         return;
 
     /* ct == is chars, not bytes, but we used the ASCII version. */
+    if (ct < 4)
+        return;
+
     buf = (char *) alloca(ct+1);
     keyname = (char *) alloca(ct + sizeof (regkeyroot));
     if ((buf == NULL) || (keyname == NULL))
