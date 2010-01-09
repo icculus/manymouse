@@ -480,7 +480,7 @@ static void get_device_product_name(char *name, size_t namesize, char *devname)
 
 static void init_mouse(const RAWINPUTDEVICELIST *dev)
 {
-    const char rdp_ident[] = "ROOT#RDP_MOU#";
+    const char rdp_ident[] = "ROOT\\RDP_MOU\\";
     MouseStruct *mouse = &mice[available_mice];
     char *buf = NULL;
     char *ptr = NULL;
