@@ -18,6 +18,7 @@
 
 #define WIN32_LEAN_AND_MEAN 1
 #include <windows.h>
+#include <setupapi.h>
 #include <malloc.h>  /* needed for alloca(). */
 
 /* Cygwin's headers don't have WM_INPUT right now... */
@@ -71,9 +72,6 @@ static BOOL (WINAPI *pRegisterRawInputDevices)(PCRAWINPUTDEVICE,UINT,UINT);
 static LRESULT (WINAPI *pDefRawInputProc)(PRAWINPUT *,INT,UINT);
 static UINT (WINAPI *pGetRawInputBuffer)(PRAWINPUT,PUINT,UINT);
 static UINT (WINAPI *pGetRawInputData)(HRAWINPUT,UINT,LPVOID,PUINT,UINT);
-static LONG (WINAPI *pRegQueryValueExA)(HKEY,LPCTSTR,LPDWORD,LPDWORD,LPBYTE,LPDWORD);
-static LONG (WINAPI *pRegOpenKeyExA)(HKEY,LPCTSTR,DWORD,REGSAM,PHKEY);
-static LONG (WINAPI *pRegCloseKey)(HKEY);
 static HWND (WINAPI *pCreateWindowExA)(DWORD,LPCTSTR,LPCTSTR,DWORD,int,int,int,int,HWND,HMENU,HINSTANCE,LPVOID);
 static ATOM (WINAPI *pRegisterClassExA)(CONST WNDCLASSEX *);
 static LRESULT (WINAPI *pDefWindowProcA)(HWND,UINT,WPARAM,LPARAM);
@@ -87,6 +85,12 @@ static void (WINAPI *pInitializeCriticalSection)(LPCRITICAL_SECTION);
 static void (WINAPI *pEnterCriticalSection)(LPCRITICAL_SECTION);
 static void (WINAPI *pLeaveCriticalSection)(LPCRITICAL_SECTION);
 static void (WINAPI *pDeleteCriticalSection)(LPCRITICAL_SECTION);
+static DWORD (WINAPI *pGetLastError)(void);
+static HDEVINFO (WINAPI *pSetupDiGetClassDevsA)(LPGUID, PCTSTR, HWND, DWORD);
+static BOOL (WINAPI *pSetupDiEnumDeviceInfo)(HDEVINFO, DWORD, PSP_DEVINFO_DATA);
+static BOOL (WINAPI *pSetupDiGetDeviceInstanceIdA)(HDEVINFO, PSP_DEVINFO_DATA, PTSTR, DWORD, PDWORD);
+static BOOL (WINAPI *pSetupDiGetDeviceRegistryPropertyA)(HDEVINFO, PSP_DEVINFO_DATA, DWORD, PDWORD, PBYTE, DWORD, PDWORD);
+static BOOL (WINAPI *pSetupDiDestroyDeviceInfoList)(HDEVINFO);
 
 static int symlookup(HMODULE dll, void **addr, const char *sym)
 {
@@ -127,29 +131,71 @@ static int find_api_symbols(void)
     LOOKUP(DispatchMessageA);
     LOOKUP(DestroyWindow);
 
-    dll = LoadLibrary("advapi32.dll");
-    if (dll == NULL)
-        return(0);
-
-    LOOKUP(RegOpenKeyExA);
-    LOOKUP(RegQueryValueExA);
-    LOOKUP(RegCloseKey);
-
     dll = LoadLibrary("kernel32.dll");
     if (dll == NULL)
         return(0);
 
     LOOKUP(GetModuleHandleA);
+    LOOKUP(GetLastError);
     LOOKUP(InitializeCriticalSection);
     LOOKUP(EnterCriticalSection);
     LOOKUP(LeaveCriticalSection);
     LOOKUP(DeleteCriticalSection);
+
+    dll = LoadLibrary("setupapi.dll");
+    if (dll == NULL)
+        return(0);
+
+    LOOKUP(SetupDiGetClassDevsA);
+    LOOKUP(SetupDiEnumDeviceInfo);
+    LOOKUP(SetupDiGetDeviceInstanceIdA);
+    LOOKUP(SetupDiGetDeviceRegistryPropertyA);
+    LOOKUP(SetupDiDestroyDeviceInfoList);
 
     #undef LOOKUP
 
     did_api_lookup = 1;
     return(1);
 } /* find_api_symbols */
+
+static char make_upper(const char a)
+{
+    return ((a >= 'a') && (a <= 'z')) ? (a - ('a' - 'A')) : a;
+} /* make_upper */
+
+static void make_string_upper(char *str)
+{
+    char *ptr;
+    for (ptr = str; *ptr; ptr++)
+        *ptr = make_upper(*ptr);
+} /* make_string_upper */
+
+/* avoid C runtime dependency... */
+static int string_compare(const char *a, const char *b)
+{
+    while (1)
+    {
+        const char cha = *(a++);
+        const char chb = *(b++);
+        if (cha < chb)
+            return -1;
+        else if (cha > chb)
+            return 1;
+        else if (cha == '\0')
+            return 0;
+    } /* while */
+
+    return 0;
+} /* string_compare */
+
+
+/* avoid C runtime dependency... */
+static size_t string_length(const char *a)
+{
+    size_t retval;
+    for (retval = 0; *(a++); retval++) { /* spin. */ }
+    return retval;
+} /* string_length */
 
 
 static void queue_event(const ManyMouseEvent *event)
@@ -366,8 +412,8 @@ static void cleanup_window(void)
 
 static int accept_device(const RAWINPUTDEVICELIST *dev)
 {
-    const char rdp_ident[] = "Root#RDP_MOU#0000#";
-    char *buf = NULL;
+    const char rdp_ident[] = "ROOT#RDP_MOU#";
+    char *buf = NULL;    
     UINT ct = 0;
 
     if (dev->dwType != RIM_TYPEMOUSE)
@@ -385,8 +431,13 @@ static int accept_device(const RAWINPUTDEVICELIST *dev)
         return(0);
 
     /* XP starts these strings with "\\??\\" ... Vista does "\\\\?\\".  :/ */
-    buf += 4;  /* skip those chars. */
-    ct -= 4;
+    while ((*buf == '?') || (*buf == '\\'))
+    {
+        buf++;
+        ct--;
+    } /* while */
+
+    make_string_upper(buf);
 
     /*
      * Apparently there's a fake "RDP" device...I guess this is
@@ -416,21 +467,69 @@ static int accept_device(const RAWINPUTDEVICELIST *dev)
 } /* accept_device */
 
 
-/* !!! FIXME: this code sucks. */
+static int get_devinfo_data(HDEVINFO devinfo, const char *devinstance,
+                            SP_DEVINFO_DATA *data)
+{
+    DWORD i = 0;
+    const DWORD bufsize = string_length(devinstance) + 1;
+    char *buf = (char *) alloca(bufsize);
+    if (buf == NULL)
+        return 0;
+
+    while (1)
+    {
+        ZeroMemory(data, sizeof (SP_DEVINFO_DATA));
+        data->cbSize = sizeof (SP_DEVINFO_DATA);
+        if (!pSetupDiEnumDeviceInfo(devinfo, i++, data))
+        {
+            if (pGetLastError() == ERROR_NO_MORE_ITEMS)
+                break;
+            else
+                continue;
+        } /* if */
+
+        if (!pSetupDiGetDeviceInstanceIdA(devinfo, data, buf, bufsize, NULL))
+            continue;
+
+        make_string_upper(buf);
+        if (string_compare(devinstance, buf) == 0)
+            return 1;  /* found it! */
+    } /* while */
+
+    return 0;  /* not found. */
+} /* get_devinfo_data */
+
+
+static void get_dev_name_by_instance(const char *devinstance, char *name,
+                                     size_t namesize)
+{
+    SP_DEVINFO_DATA devdata;
+    /* !!! FIXME: use an enumerator */
+    HDEVINFO devinfo = pSetupDiGetClassDevsA(NULL, NULL, NULL, 
+                                             DIGCF_ALLCLASSES | DIGCF_PRESENT);
+    if (devinfo == INVALID_HANDLE_VALUE)
+        return;
+
+    if (get_devinfo_data(devinfo, devinstance, &devdata))
+    {
+        pSetupDiGetDeviceRegistryPropertyA(devinfo, &devdata, SPDRP_DEVICEDESC,
+                                           NULL, (PBYTE) name, namesize, NULL);
+    } /* if */
+
+    pSetupDiDestroyDeviceInfoList(devinfo);
+} /* get_dev_name_by_instance */
+
+
 static void get_device_product_name(char *name, size_t namesize,
                                      const RAWINPUTDEVICELIST *dev)
 {
-    const char regkeyroot[] = "System\\CurrentControlSet\\Enum\\";
     const char default_device_name[] = "Unidentified input device";
-    DWORD outsize = namesize;
-    DWORD regtype = REG_SZ;
+    SP_DEVINFO_DATA devdata;
     char *buf = NULL;
     char *ptr = NULL;
-    char *keyname = NULL;
     UINT i = 0;
     UINT ct = 0;
     LONG rc = 0;
-    HKEY hkey;
 
     *name = '\0';  /* really insane default. */
     if (sizeof (default_device_name) >= namesize)
@@ -447,45 +546,39 @@ static void get_device_product_name(char *name, size_t namesize,
         return;
 
     buf = (char *) alloca(ct+1);
-    keyname = (char *) alloca(ct + sizeof (regkeyroot));
-    if ((buf == NULL) || (keyname == NULL))
+    if (buf == NULL)
         return;
 
     if (pGetRawInputDeviceInfoA(dev->hDevice, RIDI_DEVICENAME, buf, &ct) < 0)
         return;
 
-    /*
-     * This string tap dancing gets us a registry keyname in this form:
-     *   SYSTEM\CurrentControlSet\Enum\BUSTYPE\DEVICECLASS\DEVICEID
-     * (those are my best-guess for the actual elements, but the format
-     *  appears to be sound.)
-     */
-    ct -= 4;
-    buf += 4;  /* skip the "\\??\\" (or "\\\\?\\") at front of the string. */
+    /* XP starts these strings with "\\??\\" ... Vista does "\\\\?\\".  :/ */
+    while ((*buf == '?') || (*buf == '\\'))
+    {
+        buf++;
+        ct--;
+    } /* while */
+
+    make_string_upper(buf);
+
+    /* This string tap dancing gets us the device instance id. */
     for (i = 0, ptr = buf; i < ct; i++, ptr++)  /* convert '#' to '\\' ... */
     {
-        if (*ptr == '#')
+        char ch = *ptr;
+        if (ch == '#')
             *ptr = '\\';
-        else if (*ptr == '{')  /* hit the GUID part of the string. */
+        else if (ch == '{')  /* hit the GUID part of the string. */
+        {
+            if (*(ptr-1) == '\\')
+                ptr--;
             break;
+        } /* else if */
     } /* for */
 
     *ptr = '\0';
-    CopyMemory(keyname, regkeyroot, sizeof (regkeyroot) - 1);
-    CopyMemory(keyname + (sizeof (regkeyroot) - 1), buf, i + 1);
-    rc = pRegOpenKeyExA(HKEY_LOCAL_MACHINE, keyname, 0, KEY_READ, &hkey);
-    if (rc != ERROR_SUCCESS)
-        return;
 
-    rc = pRegQueryValueExA(hkey, "DeviceDesc", NULL, &regtype, name, &outsize);
-    pRegCloseKey(hkey);
-    if (rc != ERROR_SUCCESS)
-    {
-        /* msdn says failure may mangle the buffer, so default it again. */
-        CopyMemory(name, default_device_name, sizeof (default_device_name));
-        return;
-    } /* if */
-    name[namesize-1] = '\0';  /* just in case. */
+    /* okay, we're got the device instance. Now find the data for it. */
+    get_dev_name_by_instance(buf, name, namesize);
 } /* get_device_product_name */
 
 
