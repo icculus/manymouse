@@ -410,63 +410,6 @@ static void cleanup_window(void)
 } /* cleanup_window */
 
 
-static int accept_device(const RAWINPUTDEVICELIST *dev)
-{
-    const char rdp_ident[] = "ROOT#RDP_MOU#";
-    char *buf = NULL;    
-    UINT ct = 0;
-
-    if (dev->dwType != RIM_TYPEMOUSE)
-        return(0);  /* keyboard or some other fruity thing. */
-
-    if (pGetRawInputDeviceInfoA(dev->hDevice, RIDI_DEVICENAME, NULL, &ct) < 0)
-        return(0);
-
-    /* ct == is chars, not bytes, but we used the ASCII version. */
-    buf = (char *) alloca(ct);
-    if (buf == NULL)
-        return(0);
-
-    if (pGetRawInputDeviceInfoA(dev->hDevice, RIDI_DEVICENAME, buf, &ct) < 0)
-        return(0);
-
-    /* XP starts these strings with "\\??\\" ... Vista does "\\\\?\\".  :/ */
-    while ((*buf == '?') || (*buf == '\\'))
-    {
-        buf++;
-        ct--;
-    } /* while */
-
-    make_string_upper(buf);
-
-    /*
-     * Apparently there's a fake "RDP" device...I guess this is
-     *  "Remote Desktop Protocol" for controlling the system pointer
-     *  remotely via Windows Remote Desktop, but that's just a guess.
-     * At any rate, we don't want that device, so skip it if detected.
-     *
-     * Idea for this found here:
-     *   http://link.mywwwserver.com/~jstookey/arcade/rawmouse/raw_mouse.c
-     */
-
-    /* avoiding memcmp here so we don't get a C runtime dependency... */
-    if (ct >= sizeof (rdp_ident) - 1)
-    {
-        int i;
-        for (i = 0; i < sizeof (rdp_ident) - 1; i++)
-        {
-            if (buf[i] != rdp_ident[i])
-                break;
-        } /* for */
-
-        if (i == sizeof (rdp_ident) - 1)
-            return(0);  /* this is an RDP thing. Skip this device. */
-    } /* if */
-
-    return(1);  /* we want this device. */
-} /* accept_device */
-
-
 static int get_devinfo_data(HDEVINFO devinfo, const char *devinstance,
                             SP_DEVINFO_DATA *data)
 {
@@ -504,9 +447,8 @@ static void get_dev_name_by_instance(const char *devinstance, char *name,
                                      size_t namesize)
 {
     SP_DEVINFO_DATA devdata;
-    /* !!! FIXME: use an enumerator */
-    HDEVINFO devinfo = pSetupDiGetClassDevsA(NULL, NULL, NULL, 
-                                             DIGCF_ALLCLASSES | DIGCF_PRESENT);
+    const DWORD flags = DIGCF_PRESENT;
+    HDEVINFO devinfo = pSetupDiGetClassDevsA(NULL, devinstance, NULL, flags);
     if (devinfo == INVALID_HANDLE_VALUE)
         return;
 
@@ -520,16 +462,9 @@ static void get_dev_name_by_instance(const char *devinstance, char *name,
 } /* get_dev_name_by_instance */
 
 
-static void get_device_product_name(char *name, size_t namesize,
-                                     const RAWINPUTDEVICELIST *dev)
+static void get_device_product_name(char *name, size_t namesize, char *devname)
 {
     const char default_device_name[] = "Unidentified input device";
-    SP_DEVINFO_DATA devdata;
-    char *buf = NULL;
-    char *ptr = NULL;
-    UINT i = 0;
-    UINT ct = 0;
-    LONG rc = 0;
 
     *name = '\0';  /* really insane default. */
     if (sizeof (default_device_name) >= namesize)
@@ -538,19 +473,34 @@ static void get_device_product_name(char *name, size_t namesize,
     /* in case we can't stumble upon something better... */
     CopyMemory(name, default_device_name, sizeof (default_device_name));
 
+    /* okay, we're got the device instance. Now find the data for it. */
+    get_dev_name_by_instance(devname, name, namesize);
+} /* get_device_product_name */
+
+
+static void init_mouse(const RAWINPUTDEVICELIST *dev)
+{
+    const char rdp_ident[] = "ROOT#RDP_MOU#";
+    MouseStruct *mouse = &mice[available_mice];
+    char *buf = NULL;
+    char *ptr = NULL;
+    UINT ct = 0;
+
+    if (dev->dwType != RIM_TYPEMOUSE)
+        return;  /* keyboard or some other fruity thing. */
+
     if (pGetRawInputDeviceInfoA(dev->hDevice, RIDI_DEVICENAME, NULL, &ct) < 0)
         return;
 
     /* ct == is chars, not bytes, but we used the ASCII version. */
-    if (ct < 4)
-        return;
-
     buf = (char *) alloca(ct+1);
     if (buf == NULL)
         return;
 
     if (pGetRawInputDeviceInfoA(dev->hDevice, RIDI_DEVICENAME, buf, &ct) < 0)
         return;
+
+    buf[ct] = '\0';  /* make sure it's null-terminated. */
 
     /* XP starts these strings with "\\??\\" ... Vista does "\\\\?\\".  :/ */
     while ((*buf == '?') || (*buf == '\\'))
@@ -559,10 +509,8 @@ static void get_device_product_name(char *name, size_t namesize,
         ct--;
     } /* while */
 
-    make_string_upper(buf);
-
     /* This string tap dancing gets us the device instance id. */
-    for (i = 0, ptr = buf; i < ct; i++, ptr++)  /* convert '#' to '\\' ... */
+    for (ptr = buf; *ptr; ptr++)  /* convert '#' to '\\' ... */
     {
         char ch = *ptr;
         if (ch == '#')
@@ -577,22 +525,37 @@ static void get_device_product_name(char *name, size_t namesize,
 
     *ptr = '\0';
 
-    /* okay, we're got the device instance. Now find the data for it. */
-    get_dev_name_by_instance(buf, name, namesize);
-} /* get_device_product_name */
+    make_string_upper(buf);
 
+    /*
+     * Apparently there's a fake "RDP" device...I guess this is
+     *  "Remote Desktop Protocol" for controlling the system pointer
+     *  remotely via Windows Remote Desktop, but that's just a guess.
+     * At any rate, we don't want that device, so skip it if detected.
+     *
+     * Idea for this found here:
+     *   http://link.mywwwserver.com/~jstookey/arcade/rawmouse/raw_mouse.c
+     */
 
-static void init_mouse(const RAWINPUTDEVICELIST *dev)
-{
-    MouseStruct *mouse = &mice[available_mice];
-
-    if (accept_device(dev))
+    /* avoiding memcmp here so we don't get a C runtime dependency... */
+    if (ct >= sizeof (rdp_ident) - 1)
     {
-        ZeroMemory(mouse, sizeof (MouseStruct));
-        get_device_product_name(mouse->name, sizeof (mouse->name), dev);
-        mouse->handle = dev->hDevice;
-        available_mice++;  /* we're good. */
+        int i;
+        for (i = 0; i < sizeof (rdp_ident) - 1; i++)
+        {
+            if (buf[i] != rdp_ident[i])
+                break;
+        } /* for */
+
+        if (i == sizeof (rdp_ident) - 1)
+            return;  /* this is an RDP thing. Skip this device. */
     } /* if */
+
+    /* accept this mouse! */
+    ZeroMemory(mouse, sizeof (MouseStruct));
+    get_device_product_name(mouse->name, sizeof (mouse->name), buf);
+    mouse->handle = dev->hDevice;
+    available_mice++;
 } /* init_mouse */
 
 
