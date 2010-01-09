@@ -158,6 +158,9 @@ static int find_api_symbols(void)
     return(1);
 } /* find_api_symbols */
 
+
+/* Some simple functions to avoid C runtime dependency... */
+
 static char make_upper(const char a)
 {
     return ((a >= 'a') && (a <= 'z')) ? (a - ('a' - 'A')) : a;
@@ -170,7 +173,6 @@ static void make_string_upper(char *str)
         *ptr = make_upper(*ptr);
 } /* make_string_upper */
 
-/* avoid C runtime dependency... */
 static int string_compare(const char *a, const char *b)
 {
     while (1)
@@ -188,8 +190,6 @@ static int string_compare(const char *a, const char *b)
     return 0;
 } /* string_compare */
 
-
-/* avoid C runtime dependency... */
 static size_t string_length(const char *a)
 {
     size_t retval;
