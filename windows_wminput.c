@@ -86,7 +86,7 @@ static void (WINAPI *pEnterCriticalSection)(LPCRITICAL_SECTION);
 static void (WINAPI *pLeaveCriticalSection)(LPCRITICAL_SECTION);
 static void (WINAPI *pDeleteCriticalSection)(LPCRITICAL_SECTION);
 static DWORD (WINAPI *pGetLastError)(void);
-static HDEVINFO (WINAPI *pSetupDiGetClassDevsA)(LPGUID, PCTSTR, HWND, DWORD);
+static HDEVINFO (WINAPI *pSetupDiGetClassDevsA)(LPGUID, LPCTSTR, HWND, DWORD);
 static BOOL (WINAPI *pSetupDiEnumDeviceInfo)(HDEVINFO, DWORD, PSP_DEVINFO_DATA);
 static BOOL (WINAPI *pSetupDiGetDeviceInstanceIdA)(HDEVINFO, PSP_DEVINFO_DATA, PTSTR, DWORD, PDWORD);
 static BOOL (WINAPI *pSetupDiGetDeviceRegistryPropertyA)(HDEVINFO, PSP_DEVINFO_DATA, DWORD, PDWORD, PBYTE, DWORD, PDWORD);
