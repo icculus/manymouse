@@ -448,7 +448,7 @@ static void get_dev_name_by_instance(const char *devinstance, char *name,
 {
     SP_DEVINFO_DATA devdata;
     const DWORD flags = DIGCF_ALLCLASSES | DIGCF_PRESENT;
-    HDEVINFO devinfo = pSetupDiGetClassDevsA(NULL, devinstance, NULL, flags);
+    HDEVINFO devinfo = pSetupDiGetClassDevsA(NULL, NULL, NULL, flags);
     if (devinfo == INVALID_HANDLE_VALUE)
         return;
 
