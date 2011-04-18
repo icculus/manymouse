@@ -126,28 +126,31 @@ Some general ManyMouse usage notes:
    recommend using SDL's "windib" target in the meantime to avoid this
    problem.
 
- - (XInput code isn't finished yet, but in the future this note will be true.)
-   On Unix systems, we try to use the XInput extension if possible...currently
-   most users (XFree86/x.org X server) will not find this useful, since XInput
-   is either not included or not configured properly. In the short term, most
-   Linux users should favor the evdev target, below. For now, the XInput
-   target will refuse to work unless it sees more than one mouse, since in
-   those cases, the system is possibly misconfigured. XInput currently doesn't
-   support hotplugging, although the x.org people are planning to extend the
-   spec to support this. If you want to use the XInput target, make sure you
-   link with "-ldl", since we use dlopen() to find the X11/XInput libraries.
-   You do not have to link against Xlib directly, and ManyMouse will fail
-   gracefully (reporting no mice in the ManyMouse XInput driver) if the
-   libraries don't exist on the end user's system. Naturally, you'll need
-   the X11 headers on your system. You can build with SUPPORT_XINPUT defined
-   to zero to disable XInput support.
+ - On Unix systems, we try to use the XInput2 extension if possible.
+   ManyMouse will try to fallback to other approaches if there is no X server
+   available or the X server doesn't support XInput2. If you want to use the
+   XInput2 target, make sure you link with "-ldl", since we use dlopen() to
+   find the X11/XInput2 libraries. You do not have to link against Xlib
+   directly, and ManyMouse will fail gracefully (reporting no mice in the
+   ManyMouse XInput2 driver) if the libraries don't exist on the end user's
+   system. Naturally, you'll need the X11 headers on your system (on Ubuntu,
+   you would want to apt-get install libxi-dev). You can build with
+   SUPPORT_XINPUT2 defined to zero to disable XInput2 support completely.
+   Please note that the XInput2 target does not need your app to supply an X11
+   window. The test_manymouse_stdio app works with this target, so long as the
+   X server is running. Please note that you should NOT grab the mouse in your
+   app, though, as it will prevent XInput2 from supplying mouse events.
 
- - On Linux, we first try to use the /dev/input/event* devices; this means
+ - On Linux, we can try to use the /dev/input/event* devices; this means
    that ManyMouse can function with or without an X server. Please note that
-   the next major release of x.org's X server will grab the devices at the
-   kernel level, and will make this interface useless...eventually, their
-   XInput implementation will implement hotplugging and such, making it the
-   favorable ManyMouse target for most Linux users.
+   modern Linux systems only allow root access to these devices. Most users
+   will want XInput2, but this can be used if the device permissions allow.
+
+ - There (currently) exists a class of users that have Linux systems with
+   evdev device nodes forbidden to all but the root user, and no XInput2
+   support. These users are out of luck; they should either force the
+   permissions on /dev/input/events/*, or upgrade their X server. This is a
+   problem that will solve itself with time.
 
  - On Mac OS X, we use IOKit's HID Manager API, which means you can use this
    C-callable library from Cocoa, Carbon, and generic Unix applications, with
