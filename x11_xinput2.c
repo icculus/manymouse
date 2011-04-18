@@ -21,8 +21,6 @@
 
 #if SUPPORT_XINPUT2
 
-//#error this code is incomplete. Do not use unless you are fixing it.
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
