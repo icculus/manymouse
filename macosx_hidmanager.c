@@ -26,9 +26,38 @@
 #define ALLOCATOR kCFAllocatorDefault
 #define RUNLOOPMODE (CFSTR("ManyMouse"))
 #define HIDOPS kIOHIDOptionsTypeNone
-static int available_mice = 0;
+
+typedef struct
+{
+    IOHIDDeviceRef device;
+    int logical;  /* maps to what ManyMouse reports for an index. */
+} MouseStruct;
+
+static unsigned int logical_mice = 0;
+static unsigned int physical_mice = 0;
 static IOHIDManagerRef hidman = NULL;
-static IOHIDDeviceRef *devices = NULL;
+static MouseStruct *mice = NULL;
+
+static int is_trackpad(IOHIDDeviceRef device)
+{
+    char cstr[64] = { 0 };
+    CFStringRef cfstr = (CFStringRef) IOHIDDeviceGetProperty(device,
+                                                    CFSTR(kIOHIDProductKey));
+    if (!cfstr)
+        return 0;
+
+    if (!CFStringGetCString(cfstr, cstr, sizeof (cstr), kCFStringEncodingUTF8))
+        cstr[0] = '\0';
+
+    /* !!! FIXME: CFRelease(cfstr) ? */
+
+    /*
+     * This stupid thing shows up as two logical devices. One does
+     *  most of the mouse events, the other does the mouse wheel.
+     */
+    return (strcmp(cstr, "Apple Internal Keyboard / Trackpad") == 0);
+} /* is_trackpad */
+
 
 /*
  * Just trying to avoid malloc() here...we statically allocate a buffer
@@ -83,15 +112,26 @@ static inline int oldEvent(const AbsoluteTime *a, const AbsoluteTime *b)
 /* Callback fires whenever a device is unplugged/lost/whatever. */
 static void unplugged_callback(void *ctx, IOReturn res, void *sender)
 {
-    const int idx = (int) ((size_t) ctx);
-    if ((idx >= 0) && (idx < available_mice) && (devices[idx] != NULL))
+    const unsigned int idx = (unsigned int) ((size_t) ctx);
+    if ((idx < physical_mice) && (mice[idx].device) && (mice[idx].logical >= 0))
     {
+        unsigned int i;
+        const int logical = mice[idx].logical;
         ManyMouseEvent ev;
-        devices[idx] = NULL;  /* take it out of our array. */
         memset(&ev, '\0', sizeof (ev));
         ev.type = MANYMOUSE_EVENT_DISCONNECT;
-        ev.device = idx;
+        ev.device = logical;
         queue_event(&ev);
+
+        /* disable any physical devices that back the same logical mouse. */
+        for (i = 0; i < physical_mice; i++)
+        {
+            if (mice[i].logical == logical)
+            {
+                mice[i].device = NULL;
+                mice[i].logical = -1;
+            } /* if */
+        } /* for */
     } /* if */
 } /* unplugged_callback */
 
@@ -100,12 +140,12 @@ static void unplugged_callback(void *ctx, IOReturn res, void *sender)
 static void input_callback(void *ctx, IOReturn res,
                            void *sender, IOHIDValueRef val)
 {
-    const int idx = (int) ((size_t) ctx);
-    IOHIDDeviceRef dev = NULL;
-    if ((res == kIOReturnSuccess) && (idx >= 0) && (idx < available_mice))
-        dev = devices[idx];
+    const unsigned int idx = (unsigned int) ((size_t) ctx);
+    const MouseStruct *mouse = NULL;
+    if ((res == kIOReturnSuccess) && (idx < physical_mice))
+        mouse = &mice[idx];
 
-    if (dev != NULL)
+    if ((mouse != NULL) && (mouse->device != NULL) && (mouse->logical >= 0))
     {
         ManyMouseEvent ev;
         IOHIDElementRef elem = IOHIDValueGetElement(val);
@@ -115,7 +155,7 @@ static void input_callback(void *ctx, IOReturn res,
 
         memset(&ev, '\0', sizeof (ev));
         ev.value = (int) value;
-        ev.device = idx;
+        ev.device = mouse->logical;
 
         if (page == kHIDPage_GenericDesktop)
         {
@@ -166,12 +206,14 @@ static void enum_callback(void *ctx, IOReturn res,
 {
     if (res == kIOReturnSuccess)
     {
-        const size_t len = sizeof (IOHIDDeviceRef) * (available_mice+1);
-        void *ptr = realloc(devices, len);
+        const size_t len = sizeof (MouseStruct) * (physical_mice + 1);
+        void *ptr = realloc(mice, len);
         if (ptr != NULL)  /* if realloc fails, we just drop the device. */
         {
-            devices = (IOHIDDeviceRef *) ptr;
-            devices[available_mice++] = device;
+            mice = (MouseStruct *) ptr;
+            mice[physical_mice].device = device;
+            mice[physical_mice].logical = -1;  /* filled in later. */
+            physical_mice++;
         } /* if */
     } /* if */
 } /* enum_callback */
@@ -180,7 +222,8 @@ static void enum_callback(void *ctx, IOReturn res,
 static int config_hidmanager(CFMutableDictionaryRef dict)
 {
     CFRunLoopRef runloop = CFRunLoopGetCurrent();
-    int i;
+    int trackpad = -1;
+    unsigned int i;
 
     IOHIDManagerRegisterDeviceMatchingCallback(hidman, enum_callback, NULL);
     IOHIDManagerScheduleWithRunLoop(hidman,CFRunLoopGetCurrent(),RUNLOOPMODE);
@@ -190,20 +233,34 @@ static int config_hidmanager(CFMutableDictionaryRef dict)
     while (CFRunLoopRunInMode(RUNLOOPMODE,0,TRUE)==kCFRunLoopRunHandledSource)
         /* no-op. Callback fires once per existing device. */ ;
 
-    /* globals (available_mice) and (devices) are now configured. */
+    /* globals (physical_mice) and (mice) are now configured. */
     /* don't care about any hotplugged devices after the initial list. */
     IOHIDManagerRegisterDeviceMatchingCallback(hidman, NULL, NULL);
     IOHIDManagerUnscheduleFromRunLoop(hidman, runloop, RUNLOOPMODE);
 
     /* now put all those discovered devices into the runloop instead... */
-    for (i = 0; i < available_mice; i++)
+    for (i = 0; i < physical_mice; i++)
     {
-        IOHIDDeviceRef dev = devices[i];
+        MouseStruct *mouse = &mice[i];
+        IOHIDDeviceRef dev = mouse->device;
         if (IOHIDDeviceOpen(dev, HIDOPS) != kIOReturnSuccess)
-            devices[i] = NULL;  /* oh well. */
+        {
+            mouse->device = NULL;  /* oh well. */
+            mouse->logical = -1;
+        } /* if */
         else
         {
             void *ctx = (void *) ((size_t) i);
+
+            if (!is_trackpad(dev))
+                mouse->logical = logical_mice++;
+            else
+            {
+                if (trackpad < 0)
+                    trackpad = logical_mice++;
+                mouse->logical = trackpad;
+            } /* else */
+
             IOHIDDeviceRegisterRemovalCallback(dev, unplugged_callback, ctx);
             IOHIDDeviceRegisterInputValueCallback(dev, input_callback, ctx);
             IOHIDDeviceScheduleWithRunLoop(dev, runloop, RUNLOOPMODE);
@@ -257,9 +314,10 @@ static void macosx_hidmanager_quit(void)
         hidman = NULL;
     } /* if */
 
-    available_mice = 0;
-    free(devices);
-    devices = NULL;
+    logical_mice = 0;
+    physical_mice = 0;
+    free(mice);
+    mice = NULL;
 
     memset(input_events, '\0', sizeof (input_events));
     input_events_read = input_events_write = 0;
@@ -273,27 +331,44 @@ static int macosx_hidmanager_init(void)
 
     macosx_hidmanager_quit();  /* just in case... */
 
-    /* Prepare global (hidman), (devices), and (available_mice). */
+    /* Prepare global (hidman), (mice), (physical_mice), etc. */
     if (!create_hidmanager(kHIDPage_GenericDesktop, kHIDUsage_GD_Mouse))
         return -1;
 
-    return(available_mice);
+    return (int) logical_mice;
 } /* macosx_hidmanager_init */
 
+
+/* returns the first physical device that backs a logical device. */
+static MouseStruct *map_logical_device(const unsigned int index)
+{
+    if (index < logical_mice)
+    {
+        unsigned int i;
+        for (i = 0; i < physical_mice; i++)
+        {
+            if (mice[i].logical == ((int) index))
+                return &mice[i];
+        } /* for */
+    } /* if */
+
+    return NULL;  /* not found (maybe unplugged?) */
+} /* map_logical_device */
 
 static const char *macosx_hidmanager_name(unsigned int index)
 {
     static char cstr[256];  /* !!! FIXME: clean this up. */
     CFStringRef cfstr = NULL;
-
-    if ((index >= available_mice) || (devices[index] == NULL))
+    MouseStruct *mouse = map_logical_device(index);
+    if (mouse == NULL)
         return NULL;
 
-    cfstr = (CFStringRef) IOHIDDeviceGetProperty(devices[index],
+    cfstr = (CFStringRef) IOHIDDeviceGetProperty(mouse->device,
                                                  CFSTR(kIOHIDProductKey));
 
     if (cfstr)
     {
+        /* !!! FIXME: CFRelease(cfstr) */
         if (CFStringGetCString(cfstr,cstr,sizeof (cstr),kCFStringEncodingUTF8))
             return cstr;
     } /* if */
@@ -314,6 +389,7 @@ static int macosx_hidmanager_poll(ManyMouseEvent *event)
 
     return dequeue_event(event);  /* see if anything had shown up... */
 } /* macosx_hidmanager_poll */
+
 
 static const ManyMouseDriver ManyMouseDriver_interface =
 {
