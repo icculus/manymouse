@@ -324,7 +324,7 @@ static int linux_evdev_poll(ManyMouseEvent *event)
 
 static const ManyMouseDriver ManyMouseDriver_interface =
 {
-    "Linux /dev/input/event interface",
+    "Linux /dev/input/event* interface",
     linux_evdev_init,
     linux_evdev_quit,
     linux_evdev_name,
