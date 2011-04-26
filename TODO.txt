@@ -1,8 +1,5 @@
 
 - Hide absolute input (always convert to relative internally?)
-- return -1 on init failure, instead of 0, which could mean successful init,
-  but no devices available?
-- Implement X11 code.
 - Look for FIXMEs.
 
 /* end of TODO ... */
