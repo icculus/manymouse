@@ -31,7 +31,12 @@ Basic usage:
    debugging purposes only: it is not localized and we don't promise they
    won't change. The string is in UTF-8 format. Don't free this string.
  - Call ManyMouse_DeviceName() if you want to know the human-readable
-   name of each device ("Logitech USB mouse", etc).
+   name of each device ("Logitech USB mouse", etc). This is for debugging
+   purposes only: it is not localized and we don't promise they won't change.
+   As these strings are created by the device and the OS, we can't even
+   promise they'll even actually help you identify the mouse in your hand;
+   sometimes, they are quite lousy descriptions. The string is in UTF-8
+   format. Don't free this string.
  - Read input from the mice with ManyMouse_PollEvent() in a loop until the
    function returns 0. Each time through the loop, examine the event that
    was returned and react appropriately. Do this with regular frequency:
