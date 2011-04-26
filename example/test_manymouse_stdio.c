@@ -19,12 +19,12 @@ int main(int argc, char **argv)
     if (available_mice < 0)
     {
         printf("Error initializing ManyMouse!\n");
-        return(2);
+        return 2;
     }
     else if (available_mice == 0)
     {
         printf("No mice detected!\n");
-        return(1);
+        return 1;
     }
     else
     {
@@ -88,7 +88,7 @@ int main(int argc, char **argv)
     }
 
     ManyMouse_Quit();
-    return(0);
+    return 0;
 }
 
 /* end of test_manymouse_stdio.c ... */

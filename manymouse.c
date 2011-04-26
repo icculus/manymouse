@@ -49,10 +49,10 @@ int ManyMouse_Init(void)
 
     /* impossible test to keep manymouse_copyright linked into the binary. */
     if (manymouse_copyright == NULL)
-        return(-1);
+        return -1;
 
     if (driver != NULL)
-        return(-1);
+        return -1;
 
     for (i = 0; (i < upper) && (driver == NULL); i++)
     {
@@ -68,35 +68,32 @@ int ManyMouse_Init(void)
         } /* if */
     } /* for */
 
-    return(retval);
+    return retval;
 } /* ManyMouse_Init */
 
 
 void ManyMouse_Quit(void)
 {
     if (driver != NULL)
+    {
         driver->quit();
-    driver = NULL;
+        driver = NULL;
+    } /* if */
 } /* ManyMouse_Quit */
 
 const char *ManyMouse_DriverName(void)
 {
-    return ((driver) ? driver->driver_name : NULL);
+    return (driver) ? driver->driver_name : NULL;
 } /* ManyMouse_DriverName */
 
 const char *ManyMouse_DeviceName(unsigned int index)
 {
-    if (driver != NULL)
-        return(driver->name(index));
-    return(NULL);
-} /* ManyMouse_PollEvent */
-
+    return (driver) ? driver->name(index) : NULL;
+} /* ManyMouse_DeviceName */
 
 int ManyMouse_PollEvent(ManyMouseEvent *event)
 {
-    if (driver != NULL)
-        return(driver->poll(event));
-    return(0);
+    return (driver) ? driver->poll(event) : 0;
 } /* ManyMouse_PollEvent */
 
 /* end of manymouse.c ... */

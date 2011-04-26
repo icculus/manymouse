@@ -311,5 +311,5 @@ int main(int argc, char *argv[])
 	/* Clean up the SDL library */
 	ManyMouse_Quit();
 	SDL_Quit();
-	return(0);
+	return 0;
 }

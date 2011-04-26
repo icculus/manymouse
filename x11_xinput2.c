@@ -128,19 +128,19 @@ static int symlookup(void *dll, void **addr, const char *sym)
 {
     *addr = dlsym(dll, sym);
     if (*addr == NULL)
-        return(0);
+        return 0;
 
-    return(1);
+    return 1;
 } /* symlookup */
 
 static int find_api_symbols(void)
 {
     void *dll = NULL;
 
-    #define LOOKUP(x) { if (!symlookup(dll, (void **) &p##x, #x)) return(0); }
+    #define LOOKUP(x) { if (!symlookup(dll, (void **) &p##x, #x)) return 0; }
     dll = libx11 = dlopen("libX11.so.6", RTLD_GLOBAL | RTLD_LAZY);
     if (dll == NULL)
-        return(0);
+        return 0;
 
     LOOKUP(XOpenDisplay);
     LOOKUP(XCloseDisplay);
@@ -154,13 +154,13 @@ static int find_api_symbols(void)
 
     dll = libxext = dlopen("libXext.so.6", RTLD_GLOBAL | RTLD_LAZY);
     if (dll == NULL)
-        return(0);
+        return 0;
 
     LOOKUP(XSetExtensionErrorHandler);
 
     dll = libxi = dlopen("libXi.so.6", RTLD_GLOBAL | RTLD_LAZY);
     if (dll == NULL)
-        return(0);
+        return 0;
 
     LOOKUP(XISelectEvents);
     LOOKUP(XIQueryVersion);
@@ -169,7 +169,7 @@ static int find_api_symbols(void)
 
     #undef LOOKUP
 
-    return(1);
+    return 1;
 } /* find_api_symbols */
 
 
@@ -208,9 +208,9 @@ static int init_mouse(MouseStruct *mouse, const XIDeviceInfo *devinfo)
      */
 
     if ((devinfo->use != XISlavePointer) && (devinfo->use != XIFloatingSlave))
-        return(0);  /* not a device we care about. */
+        return 0;  /* not a device we care about. */
     else if (strstr(devinfo->name, "XTEST pointer") != NULL)
-        return(0);  /* skip this nonsense. It's for the XTEST extension. */
+        return 0;  /* skip this nonsense. It's for the XTEST extension. */
 
     mouse->device_id = devinfo->deviceid;
     mouse->connected = 1;
@@ -229,7 +229,7 @@ static int init_mouse(MouseStruct *mouse, const XIDeviceInfo *devinfo)
 
     strncpy(mouse->name, devinfo->name, sizeof (mouse->name));
     mouse->name[sizeof (mouse->name) - 1] = '\0';
-    return(1);
+    return 1;
 } /* init_mouse */
 
 
@@ -276,14 +276,14 @@ static int x11_xinput2_init_internal(void)
     xinput2_cleanup();  /* just in case... */
 
     if (getenv("MANYMOUSE_NO_XINPUT2") != NULL)
-        return(-1);
+        return -1;
 
     if (!find_api_symbols())
-        return(-1);  /* couldn't find all needed symbols. */
+        return -1;  /* couldn't find all needed symbols. */
 
     display = pXOpenDisplay(NULL);
     if (display == NULL)
-        return(-1);  /* no X server at all */
+        return -1;  /* no X server at all */
 
     Xext_handler = pXSetExtensionErrorHandler(xext_errhandler);
     available = (pXQueryExtension(display, ext, &xi2_opcode, &event, &error) &&
@@ -292,7 +292,7 @@ static int x11_xinput2_init_internal(void)
     Xext_handler = NULL;
 
     if (!available)
-        return(-1);  /* no XInput2 support. */
+        return -1;  /* no XInput2 support. */
 
     /*
      * Register for events first, to prevent a race where we unplug a
@@ -300,7 +300,7 @@ static int x11_xinput2_init_internal(void)
      *  listening for changes.
      */
     if (!register_for_events(display))
-        return(-1);
+        return -1;
 
     device_list = pXIQueryDevice(display, XIAllDevices, &device_count);
     for (i = 0; i < device_count; i++)
@@ -311,7 +311,7 @@ static int x11_xinput2_init_internal(void)
     } /* for */
     pXIFreeDeviceInfo(device_list);
 
-    return(available_mice);
+    return available_mice;
 } /* x11_xinput2_init_internal */
 
 
@@ -320,7 +320,7 @@ static int x11_xinput2_init(void)
     int retval = x11_xinput2_init_internal();
     if (retval < 0)
         xinput2_cleanup();
-    return(retval);
+    return retval;
 } /* x11_xinput2_init */
 
 
@@ -332,9 +332,7 @@ static void x11_xinput2_quit(void)
 
 static const char *x11_xinput2_name(unsigned int index)
 {
-    if (index < available_mice)
-        return(mice[index].name);
-    return(NULL);
+    return (index < available_mice) ? mice[index].name : NULL;
 } /* x11_xinput2_name */
 
 

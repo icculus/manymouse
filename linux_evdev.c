@@ -51,17 +51,17 @@ static int poll_mouse(MouseStruct *mouse, ManyMouseEvent *outevent)
         if (br == -1)
         {
             if (errno == EAGAIN)
-                return(0);  /* just no new data at the moment. */
+                return 0;  /* just no new data at the moment. */
 
             /* mouse was unplugged? */
             close(mouse->fd);  /* stop reading from this mouse. */
             mouse->fd = -1;
             outevent->type = MANYMOUSE_EVENT_DISCONNECT;
-            return(1);
+            return 1;
         } /* if */
 
         if (br != sizeof (event))
-            return(0);  /* oh well. */
+            return 0;  /* oh well. */
 
         unhandled = 0;  /* will reset if necessary. */
         outevent->value = event.value;
@@ -141,7 +141,7 @@ static int poll_mouse(MouseStruct *mouse, ManyMouseEvent *outevent)
         } /* else */
     } /* while */
 
-    return(1);  /* got a valid event */
+    return 1;  /* got a valid event */
 } /* poll_mouse */
 
 
@@ -285,9 +285,7 @@ static void linux_evdev_quit(void)
 
 static const char *linux_evdev_name(unsigned int index)
 {
-    if (index < available_mice)
-        return(mice[index].name);
-    return(NULL);
+    return (index < available_mice) ? mice[index].name : NULL;
 } /* linux_evdev_name */
 
 
@@ -312,14 +310,14 @@ static int linux_evdev_poll(ManyMouseEvent *event)
                 if (poll_mouse(mouse, event))
                 {
                     event->device = i;
-                    return(1);
+                    return 1;
                 } /* if */
             } /* if */
             i++;
         } /* while */
     } /* if */
 
-    return(0);  /* no new events */
+    return 0;  /* no new events */
 } /* linux_evdev_poll */
 
 static const ManyMouseDriver ManyMouseDriver_interface =

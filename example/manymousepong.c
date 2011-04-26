@@ -103,7 +103,7 @@ static int initVideo(void)
     if (!SDL_WasInit(SDL_INIT_VIDEO))
     {
         if (SDL_Init(SDL_INIT_VIDEO) == -1)
-            return(0);
+            return 0;
     } /* if */
 
     SDL_WM_GrabInput(sdlgrab ? SDL_GRAB_ON : SDL_GRAB_OFF);
@@ -114,7 +114,7 @@ static int initVideo(void)
     if (screen == NULL)
     {
         SDL_Quit();
-        return(0);
+        return 0;
     } /* if */
 
     /*
@@ -139,13 +139,13 @@ static int initVideo(void)
     for (i = 0; i < MAX_BALLS; i++)
         balls[i].blanked = 1;
     
-    return(1);  /* we're good to go. */
+    return 1;  /* we're good to go. */
 } /* initVideo */
 
 
 static inline PaddleSide getPaddleSide(int paddleidx)
 {
-    return((PaddleSide) (paddleidx % 4));
+    return (PaddleSide) (paddleidx % 4);
 } /* getPaddleSide */
 
 
@@ -189,7 +189,7 @@ static int initMice(void)
 
     setSidesExists();
 
-    return(1);
+    return 1;
 } /* initMice */
 
 
@@ -227,7 +227,7 @@ static Uint32 standardizedColor(void)
     static int nextcolor = 0;
     const RGB *color = &colorArray[nextcolor++];
     nextcolor %= (sizeof (colorArray) / sizeof (colorArray[0]));
-    return(SDL_MapRGB(screen->format, color->r, color->g, color->b));
+    return SDL_MapRGB(screen->format, color->r, color->g, color->b);
 } /* standardizedColor */
 
 
@@ -237,7 +237,7 @@ static inline Uint32 randomizedColor(void)
     Uint8 r = (Uint8) (255.0f*rand()/(RAND_MAX+1.0f));
     Uint8 g = (Uint8) (255.0f*rand()/(RAND_MAX+1.0f));
     Uint8 b = (Uint8) (255.0f*rand()/(RAND_MAX+1.0f));
-    return(SDL_MapRGB(screen->format, r, g, b));
+    return SDL_MapRGB(screen->format, r, g, b);
 } /* randomizedColor */
 #endif
 
@@ -405,11 +405,11 @@ static int updateInput(void)
         switch (event.type)
         {
             case SDL_QUIT:  /* window was closed, etc. */
-                return(0);
+                return 0;
 
             case SDL_KEYDOWN:
                 if (event.key.keysym.sym == SDLK_ESCAPE)
-                    return(0);  /* quit. */
+                    return 0;  /* quit. */
 
 
                 else if (event.key.keysym.sym == SDLK_KP_PLUS)
@@ -474,7 +474,7 @@ static int updateInput(void)
                         if (!initVideo())
                         {
                             printf("window/fullscreen toggle failed!\n");
-                            return(0);  /* quit */
+                            return 0;  /* quit */
                         } /* if */
 
                         /*
@@ -496,7 +496,7 @@ static int updateInput(void)
         } /* switch */
     } /* while */
 
-    return(1);  /* no quit events this time. */
+    return 1;  /* no quit events this time. */
 } /* updateInput */
 
 
@@ -632,12 +632,12 @@ static inline int inRect(int x, int y, int bx1, int by1, int bx2, int by2)
     /* bounding box must be normalized. */
 
     if ((x < bx1) || (x > bx2))
-        return(0);
+        return 0;
 
     if ((y < by1) || (y > by2))
-        return(0);
+        return 0;
 
-    return(1);
+    return 1;
 } /* inRect */
 
 
@@ -645,14 +645,14 @@ static inline int intersection(int px1, int py1, int px2, int py2,
                                int bx1, int by1, int bx2, int by2)
 {
     /* if any corner of a rect is in the other, it's a collision. */
-    return((inRect(px1, py1, bx1, by1, bx2, by2)) ||
-           (inRect(px2, py1, bx1, by1, bx2, by2)) ||
-           (inRect(px1, py2, bx1, by1, bx2, by2)) ||
-           (inRect(px2, py2, bx1, by1, bx2, by2)) ||
-           (inRect(bx1, by1, px1, py1, px2, py2)) ||
-           (inRect(bx2, by1, px1, py1, px2, py2)) ||
-           (inRect(bx1, by2, px1, py1, px2, py2)) ||
-           (inRect(bx2, by2, px1, py1, px2, py2)));
+    return ( (inRect(px1, py1, bx1, by1, bx2, by2)) ||
+             (inRect(px2, py1, bx1, by1, bx2, by2)) ||
+             (inRect(px1, py2, bx1, by1, bx2, by2)) ||
+             (inRect(px2, py2, bx1, by1, bx2, by2)) ||
+             (inRect(bx1, by1, px1, py1, px2, py2)) ||
+             (inRect(bx2, by1, px1, py1, px2, py2)) ||
+             (inRect(bx1, by2, px1, py1, px2, py2)) ||
+             (inRect(bx2, by2, px1, py1, px2, py2)) );
 } /* intersection */
 
 
@@ -662,10 +662,10 @@ static inline int scoreOrBounce(PongThing *ball, PaddleSide side)
     if (sideExists[side])
     {
         triggerScore(ball, side);
-        return(0);
+        return 0;
     } /* if */
 
-    return(1);
+    return 1;
 } /* scoreOrBounce */
 
 
@@ -914,11 +914,11 @@ static int processCmdLines(int argc, char **argv)
         else
         {
             printf("Unknown command line '%s'\n", arg);
-            return(0);
+            return 0;
         } /* else */
     } /* for */
 
-    return(1);
+    return 1;
 } /* processCmdLines */
 
 
@@ -950,17 +950,17 @@ static void updateFPS(int reinit)
 int main(int argc, char **argv)
 {
     if (!processCmdLines(argc, argv))
-        return(42);
+        return 42;
 
     if (!initVideo())
-        return(42);
+        return 42;
 
     initThings();
 
     if (!initMice())
     {
         SDL_Quit();
-        return(42);
+        return 42;
     } /* if */
 
     updateFPS(1);
@@ -973,7 +973,7 @@ int main(int argc, char **argv)
 
     ManyMouse_Quit();
     SDL_Quit();  /* clean up video mode, etc. */
-    return(0);
+    return 0;
 } /* main */
 
 /* end of manymousepong.c ... */

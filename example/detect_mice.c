@@ -18,7 +18,7 @@ int main(int argc, char **argv)
     if (available_mice <= 0)
     {
         printf("No mice detected!\n");
-        return(1);
+        return 1;
     }
     else
     {
@@ -28,8 +28,8 @@ int main(int argc, char **argv)
             printf("#%d: %s\n", i, ManyMouse_DeviceName(i));
     }
     ManyMouse_Quit();
-    return(0);
-}
+    return 0;
+} /* main */
 
 /* end of detect_mice.c ... */
 

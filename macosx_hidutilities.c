@@ -1486,7 +1486,7 @@ static int poll_mouse(pRecDevice mouse, ManyMouseEvent *outevent)
         IOHIDEventStruct event;
 
         if (!HIDGetEvent(mouse, &event))
-            return(0);  /* no new event. */
+            return 0;  /* no new event. */
 
         unhandled = 0;  /* will reset if necessary. */
         recelem = HIDGetFirstDeviceElement(mouse, kHIDElementTypeInput);
@@ -1553,7 +1553,7 @@ static int poll_mouse(pRecDevice mouse, ManyMouseEvent *outevent)
         } /* else */
     } /* while */
 
-    return(1);  /* got a valid event */
+    return 1;  /* got a valid event */
 } /* poll_mouse */
 
 
@@ -1572,7 +1572,7 @@ static int macosx_hidutilities_init(void)
     macosx_hidutilities_quit();  /* just in case... */
 
     if (!HIDBuildDeviceList(kHIDPage_GenericDesktop, kHIDUsage_GD_Mouse))
-        return(-1);
+        return -1;
 
     available_mice = HIDCountDevices();
     if (available_mice > 0)
@@ -1585,7 +1585,7 @@ static int macosx_hidutilities_init(void)
         if ((devices == NULL) || (dev == NULL))
         {
             macosx_hidutilities_quit();
-            return(-1);
+            return -1;
         } /* if */
 
         for (i = 0; i < available_mice; i++)
@@ -1605,16 +1605,13 @@ static int macosx_hidutilities_init(void)
         } /* for */
     } /* if */
 
-    return(available_mice);
+    return available_mice;
 } /* macosx_hidutilities_init */
 
 
 static const char *macosx_hidutilities_name(unsigned int index)
 {
-    if (index >= available_mice)
-        return(NULL);
-
-    return((const char *) devices[index]->product);
+    return (index >= available_mice) ? devices[index]->product : NULL;
 } /* macosx_hidutilities_name */
 
 
@@ -1643,17 +1640,17 @@ static int macosx_hidutilities_poll(ManyMouseEvent *event)
                 {
                     dev->disconnect = DISCONNECT_COMPLETE;
                     event->type = MANYMOUSE_EVENT_DISCONNECT;
-                    return(1);
+                    return 1;
                 } /* if */
 
                 if (poll_mouse(dev, event))
-                    return(1);
+                    return 1;
             } /* if */
             i++;
         } /* while */
     } /* if */
 
-    return(0);  /* no new events */
+    return 0;  /* no new events */
 } /* macosx_hidutilities_poll */
 
 static const ManyMouseDriver ManyMouseDriver_interface =

@@ -98,10 +98,10 @@ static int symlookup(HMODULE dll, void **addr, const char *sym)
     if (*addr == NULL)
     {
         FreeLibrary(dll);
-        return(0);
+        return 0;
     } /* if */
 
-    return(1);
+    return 1;
 } /* symlookup */
 
 static int find_api_symbols(void)
@@ -109,12 +109,12 @@ static int find_api_symbols(void)
     HMODULE dll;
 
     if (did_api_lookup)
-        return(1);
+        return 1;
 
-    #define LOOKUP(x) { if (!symlookup(dll, (void **) &p##x, #x)) return(0); }
+    #define LOOKUP(x) { if (!symlookup(dll, (void **) &p##x, #x)) return 0; }
     dll = LoadLibrary("user32.dll");
     if (dll == NULL)
-        return(0);
+        return 0;
 
     LOOKUP(GetRawInputDeviceInfoA);
     LOOKUP(RegisterRawInputDevices);
@@ -133,7 +133,7 @@ static int find_api_symbols(void)
 
     dll = LoadLibrary("kernel32.dll");
     if (dll == NULL)
-        return(0);
+        return 0;
 
     LOOKUP(GetModuleHandleA);
     LOOKUP(GetLastError);
@@ -144,7 +144,7 @@ static int find_api_symbols(void)
 
     dll = LoadLibrary("setupapi.dll");
     if (dll == NULL)
-        return(0);
+        return 0;
 
     LOOKUP(SetupDiGetClassDevsA);
     LOOKUP(SetupDiEnumDeviceInfo);
@@ -155,7 +155,7 @@ static int find_api_symbols(void)
     #undef LOOKUP
 
     did_api_lookup = 1;
-    return(1);
+    return 1;
 } /* find_api_symbols */
 
 
@@ -340,7 +340,7 @@ static LRESULT CALLBACK RawWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
         wminput_handler(wParam, lParam);
 
     else if (Msg == WM_DESTROY)
-        return(0);
+        return 0;
 
     return pDefWindowProcA(hWnd, Msg, wParam, lParam);
 } /* RawWndProc */
@@ -362,14 +362,14 @@ static int init_event_queue(void)
     wce.hInstance = hInstance;
     class_atom = pRegisterClassExA(&wce);
     if (class_atom == 0)
-        return(0);
+        return 0;
 
     raw_hwnd = pCreateWindowExA(0, class_name, win_name, WS_OVERLAPPEDWINDOW,
                         CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
                         CW_USEDEFAULT, HWND_MESSAGE, NULL, hInstance, NULL);
 
     if (raw_hwnd == NULL)
-        return(0);
+        return 0;
 
     pInitializeCriticalSection(&mutex);
 
@@ -381,10 +381,10 @@ static int init_event_queue(void)
     if (!pRegisterRawInputDevices(&rid, 1, sizeof (rid)))
     {
         pDeleteCriticalSection(&mutex);
-        return(0);
+        return 0;
     } /* if */
 
-    return(1);
+    return 1;
 } /* init_event_queue */
 
 
@@ -568,11 +568,11 @@ static int windows_wminput_init(void)
     available_mice = 0;
 
     if (!find_api_symbols())  /* only supported on WinXP and later. */
-        return(-1);
+        return -1;
 
     pGetRawInputDeviceList(NULL, &ct, sizeof (RAWINPUTDEVICELIST));
     if (ct == 0)  /* no devices. */
-        return(0);
+        return 0;
 
     devlist = (PRAWINPUTDEVICELIST) alloca(sizeof (RAWINPUTDEVICELIST) * ct);
     pGetRawInputDeviceList(devlist, &ct, sizeof (RAWINPUTDEVICELIST));
@@ -585,7 +585,7 @@ static int windows_wminput_init(void)
         available_mice = 0;
     } /* if */
 
-    return(available_mice);
+    return available_mice;
 } /* windows_wminput_init */
 
 
@@ -606,9 +606,7 @@ static void windows_wminput_quit(void)
 
 static const char *windows_wminput_name(unsigned int index)
 {
-    if (index < available_mice)
-        return(mice[index].name);
-    return(NULL);
+    return (index < available_mice) ? mice[index].name : NULL;
 } /* windows_wminput_name */
 
 
@@ -641,11 +639,11 @@ static int check_for_disconnects(ManyMouseEvent *ev)
             mouse->handle = NULL;
             ev->type = MANYMOUSE_EVENT_DISCONNECT;
             ev->device = i;
-            return(1);
+            return 1;
         } /* if */
     } /* if */
 
-    return(0);  /* no disconnect event this time. */
+    return 0;  /* no disconnect event this time. */
 } /* check_for_disconnects */
 
 
@@ -693,7 +691,7 @@ static int windows_wminput_poll(ManyMouseEvent *ev)
     if (!found)
         found = check_for_disconnects(ev);
 
-    return(found);
+    return found;
 } /* windows_wminput_poll */
 
 static const ManyMouseDriver ManyMouseDriver_interface =
