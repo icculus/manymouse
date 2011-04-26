@@ -10,7 +10,12 @@
 
 #include "manymouse.h"
 
-#if ( (defined(__MACH__)) && (defined(__APPLE__)) )
+/*
+ * These APIs exist on x86_64 in 10.6, but don't actually work (they'll work
+ *  for 32-bit x86 binaries in 10.6, though!). HID Utilities is for legacy
+ *  Macs, going forward you want macosx_hidmanager.c instead.
+ */
+#if ( (defined(__APPLE__)) && (defined(i386) || defined(__POWERPC__)) )
 
 /*
  * This source is almost entirely lifted from Apple's HID Utilities
