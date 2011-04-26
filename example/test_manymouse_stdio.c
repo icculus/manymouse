@@ -29,6 +29,7 @@ int main(int argc, char **argv)
     else
     {
         int i;
+        printf("ManyMouse driver: %s\n", ManyMouse_DriverName());
         for (i = 0; i < available_mice; i++)
             printf("#%d: %s\n", i, ManyMouse_DeviceName(i));
     }

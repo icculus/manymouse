@@ -25,6 +25,11 @@ Basic usage:
  - Call ManyMouse_Init() once before using anything else in the library,
    usually at program startup time. If it returns > 0, it found mice it can
    use.
+ - Call ManyMouse_DriverName() if you want to know the human-readable
+   name of the driver that handles devices behind the scenes. Some platforms
+   have different drivers depending on the system being used. This is for
+   debugging purposes only: it is not localized and we don't promise they
+   won't change. The string is in UTF-8 format. Don't free this string.
  - Call ManyMouse_DeviceName() if you want to know the human-readable
    name of each device ("Logitech USB mouse", etc).
  - Read input from the mice with ManyMouse_PollEvent() in a loop until the

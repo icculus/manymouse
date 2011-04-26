@@ -178,6 +178,7 @@ static int initMice(void)
     else
     {
         int i;
+        printf("ManyMouse driver: %s\n", ManyMouse_DriverName());
         for (i = 0; i < available_mice; i++)
         {
             const char *name = ManyMouse_DeviceName(i);

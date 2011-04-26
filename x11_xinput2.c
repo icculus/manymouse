@@ -513,6 +513,7 @@ static int x11_xinput2_poll(ManyMouseEvent *event)
 
 static const ManyMouseDriver ManyMouseDriver_interface =
 {
+    "X11 XInput2 extension",
     x11_xinput2_init,
     x11_xinput2_quit,
     x11_xinput2_name,

@@ -1658,6 +1658,7 @@ static int macosx_hidutilities_poll(ManyMouseEvent *event)
 
 static const ManyMouseDriver ManyMouseDriver_interface =
 {
+    "Mac OS X Legacy HID Utilities",
     macosx_hidutilities_init,
     macosx_hidutilities_quit,
     macosx_hidutilities_name,

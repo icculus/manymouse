@@ -410,6 +410,7 @@ static int macosx_hidmanager_poll(ManyMouseEvent *event)
 
 static const ManyMouseDriver ManyMouseDriver_interface =
 {
+    "Mac OS X 10.5+ HID Manager",
     macosx_hidmanager_init,
     macosx_hidmanager_quit,
     macosx_hidmanager_name,

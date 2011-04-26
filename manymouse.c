@@ -79,6 +79,10 @@ void ManyMouse_Quit(void)
     driver = NULL;
 } /* ManyMouse_Quit */
 
+const char *ManyMouse_DriverName(void)
+{
+    return ((driver) ? driver->driver_name : NULL);
+} /* ManyMouse_DriverName */
 
 const char *ManyMouse_DeviceName(unsigned int index)
 {
