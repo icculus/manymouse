@@ -30,6 +30,7 @@
 typedef struct
 {
     IOHIDDeviceRef device;
+    char *name;
     int logical;  /* maps to what ManyMouse reports for an index. */
 } MouseStruct;
 
@@ -38,22 +39,47 @@ static unsigned int physical_mice = 0;
 static IOHIDManagerRef hidman = NULL;
 static MouseStruct *mice = NULL;
 
-static int is_trackpad(IOHIDDeviceRef device)
+static char *get_device_name(IOHIDDeviceRef device)
 {
-    char cstr[64] = { 0 };
+    char *buf = NULL;
+    void *ptr = NULL;
+    CFIndex len = 0;
     CFStringRef cfstr = (CFStringRef) IOHIDDeviceGetProperty(device,
                                                     CFSTR(kIOHIDProductKey));
     if (!cfstr)
-        return 0;
+        return NULL;
 
-    if (!CFStringGetCString(cfstr, cstr, sizeof (cstr), kCFStringEncodingUTF8))
-        cstr[0] = '\0';
+    CFRetain(cfstr);
+    len = (CFStringGetLength(cfstr)+1) * 12; /* 12 is overkill, but oh well. */
 
+    buf = (char *) malloc(len);
+    if (!buf)
+    {
+        CFRelease(cfstr);
+        return NULL;
+    } /* if */
+
+    if (!CFStringGetCString(cfstr, buf, len, kCFStringEncodingUTF8))
+    {
+        free(buf);
+        CFRelease(cfstr);
+        return NULL;
+    } /* if */
+
+    ptr = realloc(buf, strlen(buf) + 1);  /* shrink down our allocation. */
+    if (ptr != NULL)
+        buf = (char *) ptr;
+    return buf;
+} /* get_device_name */
+
+
+static inline int is_trackpad(const MouseStruct *mouse)
+{
     /*
      * This stupid thing shows up as two logical devices. One does
      *  most of the mouse events, the other does the mouse wheel.
      */
-    return (strcmp(cstr, "Apple Internal Keyboard / Trackpad") == 0);
+    return (strcmp(mouse->name, "Apple Internal Keyboard / Trackpad") == 0);
 } /* is_trackpad */
 
 
@@ -211,6 +237,10 @@ static void enum_callback(void *ctx, IOReturn res,
             mice = (MouseStruct *) ptr;
             mice[physical_mice].device = device;
             mice[physical_mice].logical = -1;  /* filled in later. */
+            mice[physical_mice].name = get_device_name(device);
+            if (mice[physical_mice].name == NULL)
+                return;  /* This is bad! Don't add this mouse, I guess. */
+
             physical_mice++;
         } /* if */
     } /* if */
@@ -250,7 +280,7 @@ static int config_hidmanager(CFMutableDictionaryRef dict)
         {
             void *ctx = (void *) ((size_t) i);
 
-            if (!is_trackpad(dev))
+            if (!is_trackpad(mouse))
                 mouse->logical = logical_mice++;
             else
             {
@@ -304,6 +334,10 @@ static int create_hidmanager(const UInt32 page, const UInt32 usage)
 
 static void macosx_hidmanager_quit(void)
 {
+    unsigned int i;
+    for (i = 0; i < physical_mice; i++)
+        free(mice[i].name);
+
     if (hidman != NULL)
     {
         /* closing (hidman) should close all open devices, too. */
@@ -355,22 +389,8 @@ static MouseStruct *map_logical_device(const unsigned int index)
 
 static const char *macosx_hidmanager_name(unsigned int index)
 {
-    static char cstr[256];  /* !!! FIXME: clean this up. */
-    CFStringRef cfstr = NULL;
-    MouseStruct *mouse = map_logical_device(index);
-    if (mouse == NULL)
-        return NULL;
-
-    cfstr = (CFStringRef) IOHIDDeviceGetProperty(mouse->device,
-                                                 CFSTR(kIOHIDProductKey));
-
-    if (cfstr)
-    {
-        if (CFStringGetCString(cfstr,cstr,sizeof (cstr),kCFStringEncodingUTF8))
-            return cstr;
-    } /* if */
-
-    return NULL;
+    const MouseStruct *mouse = map_logical_device(index);
+    return mouse ? mouse->name : NULL;
 } /* macosx_hidmanager_name */
 
 
