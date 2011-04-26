@@ -49,8 +49,6 @@ static int is_trackpad(IOHIDDeviceRef device)
     if (!CFStringGetCString(cfstr, cstr, sizeof (cstr), kCFStringEncodingUTF8))
         cstr[0] = '\0';
 
-    /* !!! FIXME: CFRelease(cfstr) ? */
-
     /*
      * This stupid thing shows up as two logical devices. One does
      *  most of the mouse events, the other does the mouse wheel.
@@ -368,7 +366,6 @@ static const char *macosx_hidmanager_name(unsigned int index)
 
     if (cfstr)
     {
-        /* !!! FIXME: CFRelease(cfstr) */
         if (CFStringGetCString(cfstr,cstr,sizeof (cstr),kCFStringEncodingUTF8))
             return cstr;
     } /* if */
