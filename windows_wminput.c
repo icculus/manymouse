@@ -568,7 +568,7 @@ static int windows_wminput_init(void)
     available_mice = 0;
 
     if (!find_api_symbols())  /* only supported on WinXP and later. */
-        return(0);
+        return(-1);
 
     pGetRawInputDeviceList(NULL, &ct, sizeof (RAWINPUTDEVICELIST));
     if (ct == 0)  /* no devices. */

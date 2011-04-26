@@ -23,13 +23,18 @@ Basic usage:
  - Add the new files to your project's build system.
  - #include "manymouse.h" in your source code
  - Call ManyMouse_Init() once before using anything else in the library,
-   usually at program startup time. If it returns > 0, it found mice it can
-   use.
+   usually at program startup time. If it returns > 0, that's the number of
+   mice it found. If it returns zero, it means the system works, but there
+   aren't any mice to be found, and calling ManyMouse_Init() may report mice
+   in the future if one is plugged in. If it returns < 0, it means the system
+   will never report mice; this can happen, for example, on Windows 95, which
+   lacks functionality we need that was introduced with Windows XP.
  - Call ManyMouse_DriverName() if you want to know the human-readable
    name of the driver that handles devices behind the scenes. Some platforms
    have different drivers depending on the system being used. This is for
    debugging purposes only: it is not localized and we don't promise they
    won't change. The string is in UTF-8 format. Don't free this string.
+   This will return NULL if ManyMouse_Init() failed.
  - Call ManyMouse_DeviceName() if you want to know the human-readable
    name of each device ("Logitech USB mouse", etc). This is for debugging
    purposes only: it is not localized and we don't promise they won't change.
@@ -46,7 +51,8 @@ Basic usage:
  - When you are done processing mice, call ManyMouse_Quit() once, usually at
    program termination.
 
-There are examples of complete usage in the "example" directory.
+There are examples of complete usage in the "example" directory. The simplest
+ is test_manymouse_stdio.c ...
 
 
 Thread safety note:
@@ -159,7 +165,7 @@ Some general ManyMouse usage notes:
  - There (currently) exists a class of users that have Linux systems with
    evdev device nodes forbidden to all but the root user, and no XInput2
    support. These users are out of luck; they should either force the
-   permissions on /dev/input/events/*, or upgrade their X server. This is a
+   permissions on /dev/input/event*, or upgrade their X server. This is a
    problem that will solve itself with time.
 
  - On Mac OS X, we use IOKit's HID Manager API, which means you can use this

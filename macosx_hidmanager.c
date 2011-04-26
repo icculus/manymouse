@@ -301,7 +301,7 @@ static int config_hidmanager(CFMutableDictionaryRef dict)
 
 static int create_hidmanager(const UInt32 page, const UInt32 usage)
 {
-    int retval = 0;
+    int retval = -1;
     CFNumberRef num = NULL;
     CFMutableDictionaryRef dict = CFDictionaryCreateMutable(ALLOCATOR, 0,
                                         &kCFTypeDictionaryKeyCallBacks,
