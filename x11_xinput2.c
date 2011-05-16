@@ -351,12 +351,12 @@ static int find_mouse_by_devid(const int devid)
 } /* find_mouse_by_devid */
 
 
-static int get_next_x11_event(Display *dpy, XEvent *xev)
+static int get_next_x11_event(XEvent *xev)
 {
     int available = 0;
 
-    pXFlush(dpy);
-    if (pXEventsQueued(dpy, QueuedAlready))
+    pXFlush(display);
+    if (pXEventsQueued(display, QueuedAlready))
         available = 1;
     else
     {
@@ -368,13 +368,13 @@ static int get_next_x11_event(Display *dpy, XEvent *xev)
         FD_SET(fd, &fdset);
         memset(&nowait, '\0', sizeof (nowait));
         if (select(fd+1, &fdset, NULL, NULL, &nowait) == 1)
-            available = pXPending(dpy);
+            available = pXPending(display);
     } /* else */
 
     if (available)
     {
         memset(xev, '\0', sizeof (*xev));
-        pXNextEvent(dpy, xev);
+        pXNextEvent(display, xev);
         return 1;
     } /* if */
 
@@ -392,7 +392,7 @@ static void pump_events(void)
     XEvent xev;
     int i = 0;
 
-    while (get_next_x11_event(display, &xev))
+    while (get_next_x11_event(&xev))
     {
         /* All XI2 events are "cookie" events...which need extra tapdance. */
         if (xev.xcookie.type != GenericEvent)
