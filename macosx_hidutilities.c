@@ -1611,7 +1611,7 @@ static int macosx_hidutilities_init(void)
 
 static const char *macosx_hidutilities_name(unsigned int index)
 {
-    return (index >= available_mice) ? devices[index]->product : NULL;
+    return (index < available_mice) ? devices[index]->product : NULL;
 } /* macosx_hidutilities_name */
 
 
