@@ -581,7 +581,9 @@ static void hid_GetDeviceInfo (io_object_t hidDevice, CFMutableDictionaryRef hid
                 refCF = CFDictionaryGetValue (usbProperties, CFSTR("USB Product Name"));
             if (refCF)
             {
-                if (!CFStringGetCString (refCF, pDevice->product, 256, CFStringGetSystemEncoding ()))
+                // ryan forced this to UTF-8.
+                //if (!CFStringGetCString (refCF, pDevice->product, 256, CFStringGetSystemEncoding ()))
+                if (!CFStringGetCString (refCF, pDevice->product, 256, kCFStringEncodingUTF8))
                     HIDReportError ("CFStringGetCString error retrieving pDevice->product.");
             }
 
