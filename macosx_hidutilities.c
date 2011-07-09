@@ -147,6 +147,7 @@ struct recDevice
     recElement* pListElements; 				// head of linked list of elements 
     DisconnectState disconnect; // (ryan added this.)
     AbsoluteTime lastScrollTime;  // (ryan added this.)
+    int logical;  // (ryan added this.)
     struct recDevice* pNext; 				// next device
 };
 typedef struct recDevice recDevice;
@@ -1462,8 +1463,18 @@ static unsigned long  HIDQueueDevice (pRecDevice pDevice)
 /* -- END HID UTILITIES -- */
 
 
-static int available_mice = 0;
+static int logical_mice = 0;
+static int physical_mice = 0;
 static pRecDevice *devices = NULL;
+
+static inline int is_trackpad(const pRecDevice dev)
+{
+    /*
+     * This stupid thing shows up as two logical devices. One does
+     *  most of the mouse events, the other does the mouse wheel.
+     */
+    return (strcmp(dev->product, "Apple Internal Keyboard / Trackpad") == 0);
+} /* is_trackpad */
 
 
 /* returns non-zero if (a <= b). */
@@ -1563,7 +1574,8 @@ static void macosx_hidutilities_quit(void)
     HIDReleaseDeviceList();
     free(devices);
     devices = NULL;
-    available_mice = 0;
+    logical_mice = 0;
+    physical_mice = 0;
 } /* macosx_hidutilities_quit */
 
 
@@ -1574,44 +1586,74 @@ static int macosx_hidutilities_init(void)
     if (!HIDBuildDeviceList(kHIDPage_GenericDesktop, kHIDUsage_GD_Mouse))
         return -1;
 
-    available_mice = HIDCountDevices();
-    if (available_mice > 0)
+    physical_mice = HIDCountDevices();
+    if (physical_mice > 0)
     {
-        int i;
         pRecDevice dev = NULL;
+        int trackpad = -1;
+        int i;
 
         dev = HIDGetFirstDevice();
-        devices = (pRecDevice *) malloc(sizeof (pRecDevice) * available_mice);
+        devices = (pRecDevice *) malloc(sizeof (pRecDevice) * physical_mice);
         if ((devices == NULL) || (dev == NULL))
         {
             macosx_hidutilities_quit();
             return -1;
         } /* if */
 
-        for (i = 0; i < available_mice; i++)
+        for (i = 0; i < physical_mice; i++)
         {
             if (dev == NULL)  /* what? list ended? Truncate final list... */
-                available_mice = i;
+                physical_mice = i;
 
             if (HIDQueueDevice(dev) == kIOReturnSuccess)
+            {
+                if (!is_trackpad(dev))
+                    dev->logical = logical_mice++;
+                else
+                {
+                    if (trackpad < 0)
+                        trackpad = logical_mice++;
+                    dev->logical = trackpad;
+                } /* else */
                 devices[i] = dev;
+            } /* if */
+
             else  /* failed? Chop this device from the list... */
             {
                 i--;
-                available_mice--;
+                physical_mice--;
             } /* else */
 
             dev = HIDGetNextDevice(dev);
         } /* for */
     } /* if */
 
-    return available_mice;
+    return logical_mice;
 } /* macosx_hidutilities_init */
+
+
+/* returns the first physical device that backs a logical device. */
+static pRecDevice map_logical_device(const unsigned int index)
+{
+    if (index < logical_mice)
+    {
+        unsigned int i;
+        for (i = 0; i < physical_mice; i++)
+        {
+            if (devices[i]->logical == ((int) index))
+                return devices[i];
+        } /* for */
+    } /* if */
+
+    return NULL;  /* not found (maybe unplugged?) */
+} /* map_logical_device */
 
 
 static const char *macosx_hidutilities_name(unsigned int index)
 {
-    return (index < available_mice) ? devices[index]->product : NULL;
+    pRecDevice dev = map_logical_device(index);
+    return (dev != NULL) ? dev->product : NULL;
 } /* macosx_hidutilities_name */
 
 
@@ -1623,22 +1665,34 @@ static int macosx_hidutilities_poll(ManyMouseEvent *event)
      */
     static unsigned int i = 0;
 
-    if (i >= available_mice)
+    if (i >= physical_mice)
         i = 0;  /* handle reset condition. */
 
     if (event != NULL)
     {
-        while (i < available_mice)
+        while (i < physical_mice)
         {
             pRecDevice dev = devices[i];
             if ((dev) && (dev->disconnect != DISCONNECT_COMPLETE))
             {
-                event->device = i;
+                const int logical = dev->logical;
+                event->device = logical;
 
                 /* see if mouse was unplugged since last polling... */
                 if (dev->disconnect == DISCONNECT_TELLUSER)
                 {
-                    dev->disconnect = DISCONNECT_COMPLETE;
+                    int j;
+
+                    /* disable physical devices backing this logical mouse. */
+                    for (j = 0; j < physical_mice; j++)
+                    {
+                        if (devices[j]->logical == logical)
+                        {
+                            devices[j]->disconnect = DISCONNECT_COMPLETE;
+                            devices[j]->logical = -1;
+                        } /* if */
+                    } /* for */
+
                     event->type = MANYMOUSE_EVENT_DISCONNECT;
                     return 1;
                 } /* if */
