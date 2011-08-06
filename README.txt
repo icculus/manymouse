@@ -165,7 +165,7 @@ Some general ManyMouse usage notes:
         driver = SDL_VideoDriverName(namebuf, sizeof (namebuf));
         if (driver && (strcmp(driver, "x11") == 0))
         {
-		    if (strcmp(ManyMouse_DriverName(), "X11 XInput2 extension") == 0)
+            if (strcmp(ManyMouse_DriverName(), "X11 XInput2 extension") == 0)
                 setenv("SDL_MOUSE_RELATIVE", "0", 1);
         }
 
