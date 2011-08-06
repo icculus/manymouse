@@ -154,8 +154,19 @@ Some general ManyMouse usage notes:
    SUPPORT_XINPUT2 defined to zero to disable XInput2 support completely.
    Please note that the XInput2 target does not need your app to supply an X11
    window. The test_manymouse_stdio app works with this target, so long as the
-   X server is running. Please note that you should NOT grab the mouse in your
-   app, though, as it will prevent XInput2 from supplying mouse events.
+   X server is running. Please note that the X11 DGA extension conflicts with
+   XInput2 (specifically: SDL might use it). This is a good way to deal with
+   this in SDL 1.2:
+
+        char namebuf[16];
+        const char *driver;
+
+        SDL_Init(SDL_INIT_VIDEO);
+        driver = SDL_VideoDriverName(namebuf, sizeof (namebuf));
+        if (driver && (strcmp(driver, "x11") == 0))
+            setenv("SDL_MOUSE_RELATIVE", "0", 1);
+
+        // now you may call SDL_SetVideoMode() or SDL_WM_GrabInput() safely.
 
  - On Linux, we can try to use the /dev/input/event* devices; this means
    that ManyMouse can function with or without an X server. Please note that
