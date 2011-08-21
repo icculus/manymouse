@@ -21,7 +21,7 @@
  * This source is almost entirely lifted from Apple's HID Utilities
  *  example source code, written by George Warner:
  *
- * http://developer.apple.com/samplecode/HID_Utilities_Source/HID_Utilities_Source.html
+ * http://developer.apple.com/library/mac/#samplecode/HID_Utilities_Source/Introduction/Intro.html
  *
  * The source license to HID Utilities allows this sort of blatant stealing.
  *
