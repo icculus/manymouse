@@ -47,7 +47,14 @@ static char *get_device_name(IOHIDDeviceRef device)
     CFStringRef cfstr = (CFStringRef) IOHIDDeviceGetProperty(device,
                                                     CFSTR(kIOHIDProductKey));
     if (!cfstr)
-        return NULL;
+    {
+        /* Maybe we can't get "AwesomeMouse2000", but we can get "Logitech"? */
+        cfstr = (CFStringRef) IOHIDDeviceGetProperty(device,
+                                                 CFSTR(kIOHIDManufacturerKey));
+    } /* if */
+
+    if (!cfstr)
+        return strdup("Unidentified mouse device");  /* oh well. */
 
     CFRetain(cfstr);
     len = (CFStringGetLength(cfstr)+1) * 12; /* 12 is overkill, but oh well. */
