@@ -112,7 +112,7 @@ static int find_api_symbols(void)
         return 1;
 
     #define LOOKUP(x) { if (!symlookup(dll, (void **) &p##x, #x)) return 0; }
-    dll = LoadLibrary("user32.dll");
+    dll = LoadLibrary(TEXT("user32.dll"));
     if (dll == NULL)
         return 0;
 
@@ -131,7 +131,7 @@ static int find_api_symbols(void)
     LOOKUP(DispatchMessageA);
     LOOKUP(DestroyWindow);
 
-    dll = LoadLibrary("kernel32.dll");
+    dll = LoadLibrary(TEXT("kernel32.dll"));
     if (dll == NULL)
         return 0;
 
@@ -142,7 +142,7 @@ static int find_api_symbols(void)
     LOOKUP(LeaveCriticalSection);
     LOOKUP(DeleteCriticalSection);
 
-    dll = LoadLibrary("setupapi.dll");
+    dll = LoadLibrary(TEXT("setupapi.dll"));
     if (dll == NULL)
         return 0;
 
