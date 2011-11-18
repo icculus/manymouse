@@ -382,6 +382,18 @@ static int get_next_x11_event(XEvent *xev)
 } /* get_next_x11_event */
 
 
+/* Everything else returns left (0), right (1), middle (2)...XI2 returns
+   right and middle in reverse, so swap them ourselves. */
+static inline int map_xi2_button(const int button)
+{
+    if (button == 2)
+        return 3;
+    else if (button == 3)
+        return 2;
+    return button;
+} /* map_xi2_button */
+
+
 static void pump_events(void)
 {
     ManyMouseEvent event;
@@ -442,7 +454,7 @@ static void pump_events(void)
                 mouse = find_mouse_by_devid(rawev->deviceid);
                 if (mouse != -1)
                 {
-                    const int button = rawev->detail;
+                    const int button = map_xi2_button(rawev->detail);
                     const int pressed = (xev.xcookie.evtype==XI_RawButtonPress);
 
                     /* gah, XInput2 still maps the wheel to buttons. */
