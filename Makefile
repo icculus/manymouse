@@ -47,8 +47,6 @@ ifeq ($(strip $(linux)),true)
 endif
 
 ifeq ($(strip $(cygwin)),true)
-  CFLAGS += -mno-cygwin
-  LDFLAGS += -mno-cygwin
   JDKPATH := $(WINDOWS_JDK_PATH)
   JAVAC := $(JDKPATH)bin\\javac
   MANYMOUSEJNILIB := ManyMouse.dll
