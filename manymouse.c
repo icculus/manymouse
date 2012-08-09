@@ -11,7 +11,7 @@
 #include "manymouse.h"
 
 static const char *manymouse_copyright =
-    "ManyMouse " MANYMOUSE_VERSION " copyright (c) 2005-2011 Ryan C. Gordon.";
+    "ManyMouse " MANYMOUSE_VERSION " copyright (c) 2005-2012 Ryan C. Gordon.";
 
 extern const ManyMouseDriver *ManyMouseDriver_windows;
 extern const ManyMouseDriver *ManyMouseDriver_evdev;
