@@ -187,24 +187,42 @@ static void initial_setup(int screen_w, int screen_h)
 
 static void init_mice(void)
 {
+    int i;
+
     available_mice = ManyMouse_Init();
-    if (available_mice > MAX_MICE)
-        available_mice = MAX_MICE;
+
+    if (available_mice < 0)
+    {
+        printf("Error initializing ManyMouse!\n");
+        return;
+    }
+
+    printf("ManyMouse driver: %s\n", ManyMouse_DriverName());
 
     if (available_mice == 0)
-        printf("No mice detected!\n");
-    else
     {
-        int i;
-        printf("ManyMouse driver: %s\n", ManyMouse_DriverName());
-        for (i = 0; i < available_mice; i++)
-        {
-            const char *name = ManyMouse_DeviceName(i);
-            strncpy(mice[i].name, name, sizeof (mice[i].name));
-            mice[i].name[sizeof (mice[i].name) - 1] = '\0';
-            mice[i].connected = 1;
-            printf("#%d: %s\n", i, mice[i].name);
-        }
+        printf("No mice detected!\n");
+        return;
+    }
+
+    for (i = 0; i < available_mice; i++)
+    {
+        const char *name = ManyMouse_DeviceName(i);
+        printf("#%d: %s\n", i, name);
+    }
+
+    if (available_mice > MAX_MICE)
+    {
+        printf("Clamping to first %d mice.\n");
+        available_mice = MAX_MICE;
+    }
+
+    for (i = 0; i < available_mice; i++)
+    {
+        const char *name = ManyMouse_DeviceName(i);
+        strncpy(mice[i].name, name, sizeof (mice[i].name));
+        mice[i].name[sizeof (mice[i].name) - 1] = '\0';
+        mice[i].connected = 1;
     }
 }
 

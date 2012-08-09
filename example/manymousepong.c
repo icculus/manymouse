@@ -169,26 +169,42 @@ static void setSidesExists(void)
 
 static int initMice(void)
 {
+    int i;
+
     available_mice = ManyMouse_Init();
-    if (available_mice > MAX_PADDLES)
-        available_mice = MAX_PADDLES;
+
+    if (available_mice < 0)
+    {
+        printf("Error initializing ManyMouse!\n");
+        return 0;
+    }
+
+    printf("ManyMouse driver: %s\n", ManyMouse_DriverName());
 
     if (available_mice == 0)
         printf("No mice detected!\n");
     else
     {
-        int i;
-        printf("ManyMouse driver: %s\n", ManyMouse_DriverName());
+        for (i = 0; i < available_mice; i++)
+        {
+            const char *name = ManyMouse_DeviceName(i);
+            printf("#%d: %s\n", i, name);
+        }
+
+        if (available_mice > MAX_PADDLES)
+        {
+            printf("Clamping to first %d mice.\n");
+            available_mice = MAX_PADDLES;
+        }
+
         for (i = 0; i < available_mice; i++)
         {
             const char *name = ManyMouse_DeviceName(i);
             paddles[i].exists = 1;
-            printf("#%d: %s\n", i, name);
-        } /* for */
-    } /* else */
+        }
+    }
 
     setSidesExists();
-
     return 1;
 } /* initMice */
 

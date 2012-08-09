@@ -63,7 +63,7 @@ int ManyMouse_Init(void)
             if (mice > retval)
                 retval = mice; /* may move from "error" to "no mice found". */
 
-            if (mice > 0)
+            if (mice >= 0)
                 driver = this_driver;
         } /* if */
     } /* for */

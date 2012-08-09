@@ -15,24 +15,27 @@
 int main(int argc, char **argv)
 {
     ManyMouseEvent event;
-    int available_mice = ManyMouse_Init();
+    const int available_mice = ManyMouse_Init();
+    int i;
+
     if (available_mice < 0)
     {
         printf("Error initializing ManyMouse!\n");
+        ManyMouse_Quit();
         return 2;
     }
-    else if (available_mice == 0)
+
+    printf("ManyMouse driver: %s\n", ManyMouse_DriverName());
+
+    if (available_mice == 0)
     {
         printf("No mice detected!\n");
+        ManyMouse_Quit();
         return 1;
     }
-    else
-    {
-        int i;
-        printf("ManyMouse driver: %s\n", ManyMouse_DriverName());
-        for (i = 0; i < available_mice; i++)
-            printf("#%d: %s\n", i, ManyMouse_DeviceName(i));
-    }
+
+    for (i = 0; i < available_mice; i++)
+        printf("#%d: %s\n", i, ManyMouse_DeviceName(i));
     printf("\n");
 
     printf("Use your mice, CTRL-C to exit.\n");

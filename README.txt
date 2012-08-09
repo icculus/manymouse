@@ -49,7 +49,8 @@ Basic usage:
    you poll for other system GUI events...once per iteration of your
    program's main loop.
  - When you are done processing mice, call ManyMouse_Quit() once, usually at
-   program termination.
+   program termination. You should call this even if ManyMouse_Init() returned
+   zero.
 
 There are examples of complete usage in the "example" directory. The simplest
  is test_manymouse_stdio.c ...
