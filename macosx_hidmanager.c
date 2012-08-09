@@ -73,6 +73,8 @@ static char *get_device_name(IOHIDDeviceRef device)
         return NULL;
     } /* if */
 
+    CFRelease(cfstr);
+
     ptr = realloc(buf, strlen(buf) + 1);  /* shrink down our allocation. */
     if (ptr != NULL)
         buf = (char *) ptr;
