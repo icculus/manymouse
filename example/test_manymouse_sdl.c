@@ -213,7 +213,7 @@ static void init_mice(void)
 
     if (available_mice > MAX_MICE)
     {
-        printf("Clamping to first %d mice.\n");
+        printf("Clamping to first %d mice.\n", available_mice);
         available_mice = MAX_MICE;
     }
 

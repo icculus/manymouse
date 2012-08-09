@@ -193,15 +193,12 @@ static int initMice(void)
 
         if (available_mice > MAX_PADDLES)
         {
-            printf("Clamping to first %d mice.\n");
+            printf("Clamping to first %d mice.\n", available_mice);
             available_mice = MAX_PADDLES;
         }
 
         for (i = 0; i < available_mice; i++)
-        {
-            const char *name = ManyMouse_DeviceName(i);
             paddles[i].exists = 1;
-        }
     }
 
     setSidesExists();
