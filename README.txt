@@ -102,6 +102,17 @@ Java bindings:
   gave me the rundown on getting this to work with Cygwin.
 
 
+Matlab/Octave bindings:
+  There's a little Matlab/Octave wrapper in contrib/matlab. It can be compiled
+  using the function "compile_manymouse_mex.m". Tested under Windows 7
+  (Matlab 2010b) and Ubuntu 12.04 (Octave 3.2.4 and Matlab 2011a).
+
+  Demo scripts for Octave compatible function call ('demo_mex.m') as well as
+  Matlab's class Interface ('ManyMouse.m', 'demo_class.m') are also included.
+
+  Thanks to Thomas Weibel for the Matlab work.
+
+
 Some general ManyMouse usage notes:
  - If a mouse is disconnected, it will not return future events, even if you
    plug it right back in. You will be alerted of disconnects programmatically
