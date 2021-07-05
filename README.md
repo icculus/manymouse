@@ -211,7 +211,7 @@ Thanks to Thomas Weibel for the Matlab work.
 
 Please see the file LICENSE.txt in the source's root directory.
 
-This library was written by Ryan C. Gordon <icculus@icculus.org>.
+This library was written by Ryan C. Gordon: icculus@icculus.org
 
 --ryan.
 
