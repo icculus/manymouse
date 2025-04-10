@@ -19,7 +19,12 @@
 
 #include "manymouse.h"
 #define SDL_MAIN_HANDLED
+#ifdef __APPLE__
+// Still the SDL2 header, but different header search behavior.
+#include <SDL.h>
+#else
 #include <SDL2/SDL.h>
+#endif
 
 #define MAX_MICE 128
 #define SCROLLWHEEL_DISPLAY_TICKS 100

@@ -203,8 +203,8 @@ Thanks to Thomas Weibel for the Matlab work.
   ManyMouse from any of the official Mac application layers. This code may or
   may not work on Darwin (we're not sure if IOKit is available to that
   platform); reports of success are welcome. If you aren't already, you will
-  need to make sure you link against the "Carbon" and "IOKit" frameworks once
-  you add ManyMouse to your project.
+  need to make sure you link against the "IOKit" and either "Cocoa" or
+  "Carbon" frameworks once you add ManyMouse to your project.
 - Support for other platforms than Mac OS X, Linux, and Windows is not
   planned, but contributions of implementations for other platforms are
   welcome.
