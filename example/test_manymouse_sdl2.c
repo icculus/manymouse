@@ -8,9 +8,6 @@
  * 
  * Cross-compile for Windows on Linux with:
  * x86_64-w64-mingw32-gcc example/test_manymouse_sdl2.c manymouse.c windows_wminput.c x11_xinput2.c macosx_hidmanager.c macosx_hidutilities.c linux_evdev.c  -I./ -I"/usr/local/x86_64-w64-mingw32/include" -lSDL2main -lSDL2 -L/usr/local/x86_64-w64-mingw32/lib
- * 
- * Compile on linux with:
- * gcc example/test_manymouse_sdl2.c manymouse.c windows_wminput.c x11_xinput2.c macosx_hidmanager.c macosx_hidutilities.c linux_evdev.c  -I./ -lSDL2main -lSDL2
  */
 
 #include <stdio.h>
@@ -19,7 +16,12 @@
 
 #include "manymouse.h"
 #define SDL_MAIN_HANDLED
+#ifdef __APPLE__
+// Still the SDL2 header, but different header search behavior.
+#include <SDL.h>
+#else
 #include <SDL2/SDL.h>
+#endif
 
 #define MAX_MICE 128
 #define SCROLLWHEEL_DISPLAY_TICKS 100

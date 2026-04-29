@@ -60,10 +60,10 @@ BASEOBJS := linux_evdev.o macosx_hidutilities.o macosx_hidmanager.o windows_wmin
 
 .PHONY: clean all
 
-all: detect_mice test_manymouse_stdio test_manymouse_sdl mmpong manymousepong
+all: detect_mice test_manymouse_stdio test_manymouse_sdl mmpong manymousepong test_manymouse_sdl2
 
 clean:
-	rm -rf *.o *.obj *.exe *.class $(MANYMOUSEJNILIB) example/*.o example/*.obj test_manymouse_stdio test_manymouse_sdl detect_mice mmpong manymousepong
+	rm -rf *.o *.obj *.exe *.class $(MANYMOUSEJNILIB) example/*.o example/*.obj test_manymouse_stdio test_manymouse_sdl test_manymouse_sdl2 detect_mice mmpong manymousepong test_manymouse_sdl2
 
 %.o : %c
 	$(CC) $(CFLAGS) -o $@ $<
@@ -77,6 +77,9 @@ example/mmpong.o : example/mmpong.c
 example/manymousepong.o : example/manymousepong.c
 	$(CC) $(CFLAGS) -o $@ $< `sdl-config --cflags`
 
+example/test_manymouse_sdl2.o : example/test_manymouse_sdl2.c
+	$(CC) $(CFLAGS) -o $@ $< `sdl2-config --cflags`
+
 detect_mice: $(BASEOBJS) example/detect_mice.o
 	$(LD) -o $@ $+ $(LDFLAGS)
 
@@ -85,6 +88,9 @@ test_manymouse_stdio: $(BASEOBJS) example/test_manymouse_stdio.o
 
 test_manymouse_sdl: $(BASEOBJS) example/test_manymouse_sdl.o
 	$(LD) -o $@ $+ `sdl-config --libs` $(LDFLAGS) 
+
+test_manymouse_sdl2: $(BASEOBJS) example/test_manymouse_sdl2.o
+	$(LD) -o $@ $+ `sdl2-config --libs` $(LDFLAGS)
 
 mmpong: $(BASEOBJS) example/mmpong.o
 	$(LD) -o $@ $+ `sdl-config --libs` $(LDFLAGS)
