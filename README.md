@@ -197,6 +197,23 @@ Thanks to Thomas Weibel for the Matlab work.
   support. These users are out of luck; they should either force the
   permissions on /dev/input/event*, or upgrade their X server. This is a
   problem that will solve itself with time.
+- On Linux, Wayland with the Xwayland compatibility layer always shows 3
+  mice, which combine all physical mouse events:
+  ```
+  $ ./detect_mice
+  ManyMouse driver: X11 XInput2 extension
+  #0: xwayland-pointer:1
+  #1: xwayland-relative-pointer:1
+  #2: xwayland-pointer-gestures:1
+  ```
+  Use the environment variable `MANYMOUSE_NO_XINPUT2` to fall back to evdev
+  instead:
+  ```
+  $ MANYMOUSE_NO_XINPUT2=1 ./detect_mice
+  ManyMouse driver: Linux /dev/input/event* interface
+  #0: wireless wireless 2.4G Mouse
+  #1: USB Optical Mouse
+  ```
 - On Mac OS X, we use IOKit's HID Manager API, which means you can use this
   C-callable library from Cocoa, Carbon, and generic Unix applications, with
   or without a GUI. There are Java bindings available, too, letting you use
