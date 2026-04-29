@@ -78,19 +78,19 @@ example/manymousepong.o : example/manymousepong.c
 	$(CC) $(CFLAGS) -o $@ $< `sdl-config --cflags`
 
 detect_mice: $(BASEOBJS) example/detect_mice.o
-	$(LD) -o $@ $+ $(LDFLAGS)
+	$(LD) -o $@ $+ $(LDFLAGS) -ludev
 
 test_manymouse_stdio: $(BASEOBJS) example/test_manymouse_stdio.o
-	$(LD) -o $@ $+ $(LDFLAGS) 
+	$(LD) -o $@ $+ $(LDFLAGS) -ludev
 
 test_manymouse_sdl: $(BASEOBJS) example/test_manymouse_sdl.o
-	$(LD) -o $@ $+ `sdl-config --libs` $(LDFLAGS) 
+	$(LD) -o $@ $+ `sdl-config --libs` $(LDFLAGS) -ludev
 
 mmpong: $(BASEOBJS) example/mmpong.o
-	$(LD) -o $@ $+ `sdl-config --libs` $(LDFLAGS)
+	$(LD) -o $@ $+ `sdl-config --libs` $(LDFLAGS) -ludev
 
 manymousepong: $(BASEOBJS) example/manymousepong.o
-	$(LD) -o $@ $+ `sdl-config --libs` $(LDFLAGS) 
+	$(LD) -o $@ $+ `sdl-config --libs` $(LDFLAGS) -ludev
 
 
 # Java support ...

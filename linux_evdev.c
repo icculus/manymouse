@@ -22,6 +22,7 @@
 #include <fcntl.h>
 
 #include <linux/input.h>  /* evdev interface...  */
+#include <libudev.h>
 
 #define test_bit(array, bit)    (array[bit/8] & (1<<(bit%8)))
 
@@ -216,23 +217,9 @@ static int init_mouse(const char *fname, int fd)
 
 
 /* Return a file descriptor if this is really a mouse, -1 otherwise. */
-static int open_if_mouse(const char *fname)
+static int open_mouse(const char *fname)
 {
-    struct stat statbuf;
     int fd;
-    int devmajor, devminor;
-
-    if (stat(fname, &statbuf) == -1)
-        return 0;
-
-    if (S_ISCHR(statbuf.st_mode) == 0)
-        return 0;  /* not a character device... */
-
-    /* evdev node ids are major 13, minor 64-96. Is this safe to check? */
-    devmajor = (statbuf.st_rdev & 0xFF00) >> 8;
-    devminor = (statbuf.st_rdev & 0x00FF);
-    if ( (devmajor != 13) || (devminor < 64) || (devminor > 96) )
-        return 0;  /* not an evdev. */
 
     if ((fd = open(fname, O_RDONLY | O_NONBLOCK)) == -1)
         return 0;
@@ -242,31 +229,44 @@ static int open_if_mouse(const char *fname)
 
     close(fd);
     return 0;
-} /* open_if_mouse */
+} /* open_mouse */
 
 
 static int linux_evdev_init(void)
 {
-    DIR *dirp;
-    struct dirent *dent;
     int i;
+    struct udev *udev;
+    struct udev_enumerate  *enumerate;
+    struct udev_list_entry *devs = NULL;
+    struct udev_list_entry *item = NULL;
 
     for (i = 0; i < MAX_MICE; i++)
         mice[i].fd = -1;
 
-    dirp = opendir("/dev/input");
-    if (!dirp)
-        return -1;
+    udev = udev_new();
+    enumerate = udev_enumerate_new(udev);
 
-    while ((dent = readdir(dirp)) != NULL)
-    {
-        char fname[128];
-        snprintf(fname, sizeof (fname), "/dev/input/%s", dent->d_name);
-        if (open_if_mouse(fname))
-            available_mice++;
-    } /* while */
+    if (enumerate != NULL) {
+      udev_enumerate_add_match_property(enumerate, "ID_INPUT_MOUSE", "1");
+      udev_enumerate_add_match_property(enumerate, "ID_INPUT_TOUCHPAD", "1");
+      udev_enumerate_add_match_subsystem(enumerate, "input");
+      udev_enumerate_scan_devices(enumerate);
+      devs = udev_enumerate_get_list_entry(enumerate);
 
-    closedir(dirp);
+      for (item = devs; item; item = udev_list_entry_get_next(item)) {
+	const char         *name = udev_list_entry_get_name(item);
+	struct udev_device  *dev = udev_device_new_from_syspath(udev, name);
+	const char      *devnode = udev_device_get_devnode(dev);
+
+	if (devnode) {
+	  if (open_mouse(devnode))
+	    available_mice++;
+	}
+	udev_device_unref(dev);
+      }
+      udev_enumerate_unref(enumerate);
+    }
+    udev_unref(udev);
 
     return available_mice;
 } /* linux_evdev_init */
