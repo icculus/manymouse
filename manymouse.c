@@ -40,6 +40,7 @@ static const ManyMouseDriver **mice_drivers[] =
 
 
 static const ManyMouseDriver *driver = NULL;
+static int many_mouse_counter=0;
 
 int ManyMouse_Init(void)
 {
@@ -68,9 +69,17 @@ int ManyMouse_Init(void)
         } /* if */
     } /* for */
 
+    if(retval>0)many_mouse_counter=retval;
+    else many_mouse_counter=0;
+
     return retval;
 } /* ManyMouse_Init */
 
+
+int ManyMouse_DeviceNumber(void)
+{
+    return many_mouse_counter;
+}
 
 void ManyMouse_Quit(void)
 {
