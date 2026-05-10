@@ -29,7 +29,7 @@ CC := gcc
 LD := gcc
 
 ifeq ($(strip $(macosx)),true)
-  LDFLAGS += -framework Carbon -framework IOKit
+  LDFLAGS += -framework Cocoa -framework IOKit
   JAVAC := javac
   MANYMOUSEJNILIB := libManyMouse.jnilib
   JNICFLAGS += -I/System/Library/Frameworks/JavaVM.framework/Headers

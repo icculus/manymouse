@@ -32,7 +32,7 @@
  * Scroll down for "-- END HID UTILITIES --" to see the ManyMouse glue code.
  */
 
-#include <Carbon/Carbon.h>
+#include <Cocoa/Cocoa.h>
 
 #include <IOKit/IOTypes.h>
 // 10.0.x
